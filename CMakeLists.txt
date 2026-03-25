@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.25)
+
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
+project(FlowerExchange LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+enable_testing()
+
+add_compile_options(-Wall -Wextra -Wpedantic)
+
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+option(ENABLE_MSAN "Enable MemorySanitizer" OFF)
+
+set(SANITIZER_NAMES "")
+if(ENABLE_ASAN)
+  list(APPEND SANITIZER_NAMES address)
+endif()
+if(ENABLE_UBSAN)
+  list(APPEND SANITIZER_NAMES undefined)
+endif()
+if(ENABLE_TSAN)
+  list(APPEND SANITIZER_NAMES thread)
+endif()
+if(ENABLE_MSAN)
+  list(APPEND SANITIZER_NAMES memory)
+endif()
+
+if(SANITIZER_NAMES)
+  string(JOIN "," SANITIZER_FLAGS_VALUE ${SANITIZER_NAMES})
+  add_compile_options(-fno-omit-frame-pointer -fsanitize=${SANITIZER_FLAGS_VALUE})
+  add_link_options(-fsanitize=${SANITIZER_FLAGS_VALUE})
+  if(ENABLE_MSAN)
+    add_compile_options(-fsanitize-memory-track-origins=2)
+  endif()
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  add_compile_options(-O3 -march=native)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  if(SANITIZER_NAMES)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+  else()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+  endif()
+endif()
+
+include(cmake/dependencies.cmake)
+add_subdirectory(src)
+add_subdirectory(tests)

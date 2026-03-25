@@ -1,0 +1,227 @@
+build/CMakeFiles/4.3.0/CompilerIdCXX/CMakeCXXCompilerId.cpp:0:0: information: Too many #ifdef configurations - cppcheck only checks 12 of 167 configurations. Use --force to check all configurations. [toomanyconfigs]
+
+^
+src/app/application.cpp:1:2: information: Include file: "app/application.h" not found. [missingInclude]
+#include "app/application.h"
+ ^
+src/app/application.cpp:3:2: information: Include file: "common/thread_utils.h" not found. [missingInclude]
+#include "common/thread_utils.h"
+ ^
+src/app/application.cpp:4:2: information: Include file: "common/validator.h" not found. [missingInclude]
+#include "common/validator.h"
+ ^
+src/app/application.cpp:5:2: information: Include file: "io/csv_reader.h" not found. [missingInclude]
+#include "io/csv_reader.h"
+ ^
+src/app/application.cpp:7:2: information: Include file: <algorithm> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <algorithm>
+ ^
+src/app/application.cpp:8:2: information: Include file: <array> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <array>
+ ^
+src/app/application.cpp:9:2: information: Include file: <charconv> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <charconv>
+ ^
+src/app/application.cpp:10:2: information: Include file: <chrono> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <chrono>
+ ^
+src/app/application.cpp:11:2: information: Include file: <cstring> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <cstring>
+ ^
+src/app/application.cpp:12:2: information: Include file: <filesystem> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <filesystem>
+ ^
+src/app/application.cpp:13:2: information: Include file: <fstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <fstream>
+ ^
+src/app/application.cpp:14:2: information: Include file: <iostream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <iostream>
+ ^
+src/app/application.cpp:15:2: information: Include file: <sstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sstream>
+ ^
+src/app/application.cpp:16:2: information: Include file: <string> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <string>
+ ^
+src/app/application.cpp:17:2: information: Include file: <thread> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <thread>
+ ^
+src/app/application.cpp:399:14: style: Consider using std::fill or std::generate algorithm instead of a raw loop. [useStlAlgorithm]
+        book = OrderBook(kOrderBookMaxTicks);
+             ^
+src/app/application.cpp:402:14: style: Consider using std::fill or std::generate algorithm instead of a raw loop. [useStlAlgorithm]
+        book = OrderBook(kOrderBookMaxTicks);
+             ^
+src/common/types.cpp:1:2: information: Include file: "common/types.h" not found. [missingInclude]
+#include "common/types.h"
+ ^
+src/common/types.cpp:3:2: information: Include file: <charconv> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <charconv>
+ ^
+src/common/types.cpp:4:2: information: Include file: <cmath> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <cmath>
+ ^
+src/common/types.cpp:5:2: information: Include file: <cstdlib> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <cstdlib>
+ ^
+src/common/types.cpp:6:2: information: Include file: <limits> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <limits>
+ ^
+src/common/types.cpp:7:2: information: Include file: <stdexcept> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <stdexcept>
+ ^
+src/common/types.cpp:220:11: style: Variable 'end' can be declared as pointer to const [constVariablePointer]
+    char* end = buffer + buffer_size;
+          ^
+src/io/csv_reader.cpp:1:2: information: Include file: "io/csv_reader.h" not found. [missingInclude]
+#include "io/csv_reader.h"
+ ^
+src/io/csv_reader.cpp:3:2: information: Include file: <string> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <string>
+ ^
+src/app/application.h:3:2: information: Include file: "common/mempool.h" not found. [missingInclude]
+#include "common/mempool.h"
+ ^
+src/app/application.h:4:2: information: Include file: "common/types.h" not found. [missingInclude]
+#include "common/types.h"
+ ^
+src/app/application.h:5:2: information: Include file: "matching/matching_engine.h" not found. [missingInclude]
+#include "matching/matching_engine.h"
+ ^
+src/app/application.h:6:2: information: Include file: "matching/order_book.h" not found. [missingInclude]
+#include "matching/order_book.h"
+ ^
+src/app/application.h:8:2: information: Include file: <array> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <array>
+ ^
+src/app/application.h:9:2: information: Include file: <atomic> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <atomic>
+ ^
+src/app/application.h:10:2: information: Include file: <memory> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <memory>
+ ^
+src/app/application.h:11:2: information: Include file: <string> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <string>
+ ^
+src/app/application.h:13:2: information: Include file: <boost/lockfree/spsc_queue.hpp> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <boost/lockfree/spsc_queue.hpp>
+ ^
+src/main.cpp:3:2: information: Include file: <memory> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <memory>
+ ^
+src/matching/matching_engine.cpp:1:2: information: Include file: "matching/matching_engine.h" not found. [missingInclude]
+#include "matching/matching_engine.h"
+ ^
+src/matching/order_book.cpp:1:2: information: Include file: "matching/order_book.h" not found. [missingInclude]
+#include "matching/order_book.h"
+ ^
+tests/test_application_integration.cpp:1:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_application_integration.cpp:3:2: information: Include file: <filesystem> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <filesystem>
+ ^
+tests/test_application_integration.cpp:4:2: information: Include file: <fstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <fstream>
+ ^
+tests/test_application_integration.cpp:5:2: information: Include file: <sstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sstream>
+ ^
+tests/test_application_integration.cpp:6:2: information: Include file: <string> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <string>
+ ^
+tests/test_application_integration.cpp:7:2: information: Include file: <vector> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <vector>
+ ^
+tests/test_application_integration.cpp:9:2: information: Include file: <sys/wait.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sys/wait.h>
+ ^
+tests/test_application_integration.cpp:63:15: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+            ++count;
+              ^
+tests/test_application_integration.cpp:113:5: style: Consider using std::all_of or std::none_of algorithm instead of a raw loop. [useStlAlgorithm]
+    for (int idx : digit_positions) {
+    ^
+tests/test_csv_reader.cpp:1:2: information: Include file: "io/csv_reader.h" not found. [missingInclude]
+#include "io/csv_reader.h"
+ ^
+tests/test_csv_reader.cpp:3:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_csv_reader.cpp:5:2: information: Include file: <sstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sstream>
+ ^
+tests/test_matching_engine.cpp:1:2: information: Include file: "common/mempool.h" not found. [missingInclude]
+#include "common/mempool.h"
+ ^
+tests/test_matching_engine.cpp:2:2: information: Include file: "matching/matching_engine.h" not found. [missingInclude]
+#include "matching/matching_engine.h"
+ ^
+tests/test_matching_engine.cpp:4:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_matching_engine.cpp:6:2: information: Include file: <vector> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <vector>
+ ^
+tests/test_mempool.cpp:1:2: information: Include file: "common/mempool.h" not found. [missingInclude]
+#include "common/mempool.h"
+ ^
+tests/test_mempool.cpp:3:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_mempool.cpp:5:2: information: Include file: <vector> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <vector>
+ ^
+tests/test_order_book.cpp:1:2: information: Include file: "matching/order_book.h" not found. [missingInclude]
+#include "matching/order_book.h"
+ ^
+tests/test_order_book.cpp:3:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_stress_large_files.cpp:1:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_stress_large_files.cpp:3:2: information: Include file: <chrono> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <chrono>
+ ^
+tests/test_stress_large_files.cpp:4:2: information: Include file: <cstdlib> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <cstdlib>
+ ^
+tests/test_stress_large_files.cpp:5:2: information: Include file: <filesystem> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <filesystem>
+ ^
+tests/test_stress_large_files.cpp:6:2: information: Include file: <fstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <fstream>
+ ^
+tests/test_stress_large_files.cpp:7:2: information: Include file: <sstream> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sstream>
+ ^
+tests/test_stress_large_files.cpp:8:2: information: Include file: <string> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <string>
+ ^
+tests/test_stress_large_files.cpp:9:2: information: Include file: <vector> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <vector>
+ ^
+tests/test_stress_large_files.cpp:11:2: information: Include file: <sys/wait.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <sys/wait.h>
+ ^
+tests/test_stress_large_files.cpp:107:15: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+            ++lines;
+              ^
+tests/test_types.cpp:1:2: information: Include file: "common/types.h" not found. [missingInclude]
+#include "common/types.h"
+ ^
+tests/test_types.cpp:3:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+tests/test_types.cpp:5:2: information: Include file: <stdexcept> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <stdexcept>
+ ^
+tests/test_validator.cpp:1:2: information: Include file: "common/validator.h" not found. [missingInclude]
+#include "common/validator.h"
+ ^
+tests/test_validator.cpp:3:2: information: Include file: <gtest/gtest.h> not found. Please note: Standard library headers do not need to be provided to get proper results. [missingIncludeSystem]
+#include <gtest/gtest.h>
+ ^
+nofile:0:0: information: Active checkers: 173/186 (use --checkers-report=<filename> to see details) [checkersReport]
+

@@ -1,0 +1,191 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "Default debug build",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Optimized release build",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "description": "Optimized build with debug info for perf profiling",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "AddressSanitizer",
+      "description": "Debug build with ASan",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_ASAN": "ON"
+      }
+    },
+    {
+      "name": "ubsan",
+      "displayName": "UndefinedBehaviorSanitizer",
+      "description": "Debug build with UBSan",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-ubsan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_UBSAN": "ON"
+      }
+    },
+    {
+      "name": "tsan",
+      "displayName": "ThreadSanitizer",
+      "description": "Debug build with TSan",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-tsan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_TSAN": "ON"
+      }
+    },
+    {
+      "name": "msan",
+      "displayName": "MemorySanitizer",
+      "description": "Debug build with MSan (Clang only)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-msan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_MSAN": "ON",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-debug",
+      "displayName": "Build Debug",
+      "configurePreset": "debug",
+      "jobs": 0
+    },
+    {
+      "name": "build-release",
+      "displayName": "Build Release",
+      "configurePreset": "release",
+      "jobs": 0
+    },
+    {
+      "name": "build-relwithdebinfo",
+      "displayName": "Build RelWithDebInfo",
+      "configurePreset": "relwithdebinfo",
+      "jobs": 0
+    },
+    {
+      "name": "build-asan",
+      "displayName": "Build ASan",
+      "configurePreset": "asan",
+      "jobs": 0
+    },
+    {
+      "name": "build-ubsan",
+      "displayName": "Build UBSan",
+      "configurePreset": "ubsan",
+      "jobs": 0
+    },
+    {
+      "name": "build-tsan",
+      "displayName": "Build TSan",
+      "configurePreset": "tsan",
+      "jobs": 0
+    },
+    {
+      "name": "build-msan",
+      "displayName": "Build MSan",
+      "configurePreset": "msan",
+      "jobs": 0
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-debug",
+      "displayName": "Test Debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-release",
+      "displayName": "Test Release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-relwithdebinfo",
+      "displayName": "Test RelWithDebInfo",
+      "configurePreset": "relwithdebinfo",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-asan",
+      "displayName": "Test ASan",
+      "configurePreset": "asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-ubsan",
+      "displayName": "Test UBSan",
+      "configurePreset": "ubsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-tsan",
+      "displayName": "Test TSan",
+      "configurePreset": "tsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-msan",
+      "displayName": "Test MSan",
+      "configurePreset": "msan",
+      "environment": {
+        "MSAN_OPTIONS": "halt_on_error=0:exit_code=0"
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
