@@ -217,6 +217,7 @@ void Application::init() {
         return;
     }
 
+    timestamp_cache_.start();
     rebuild_matcher();
     initialized_ = true;
 }
@@ -230,6 +231,7 @@ void Application::shutdown() {
         return;
     }
     matcher_.reset();
+    timestamp_cache_.stop();
     initialized_ = false;
 }
 
@@ -323,6 +325,9 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
         }
         ++consumed;
 
+        std::array<char, 20> event_timestamp{};
+        timestamp_cache_.snapshot(event_timestamp.data(), event_timestamp.size());
+
         std::array<char, 32> oid{};
         format_order_id(oid.data(), oid.size(), next_oid_++);
 
@@ -332,8 +337,6 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
             validate_order(instrument, msg.side, msg.price, msg.quantity);
 
         if (UNLIKELY(!validation.first)) {
-            std::array<char, 20> reject_timestamp{};
-            ExecutionReport::fill_current_timestamp(reject_timestamp.data(), reject_timestamp.size());
             ExecutionReport* reject = report_pool_.allocate(
                 oid.data(),
                 msg.coid,
@@ -343,7 +346,7 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
                 static_cast<uint16_t>(msg.quantity > 0 ? msg.quantity : 0),
                 ExecStatus::REJECTED,
                 validation.second,
-                reject_timestamp.data());
+                event_timestamp.data());
 
             OutboundReportMsg out{};
             fill_outbound_common_fields(out, reject, msg.instrument, msg.side);

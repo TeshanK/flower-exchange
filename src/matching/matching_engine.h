@@ -18,7 +18,9 @@ public:
 
     template <typename EmitReport>
     // Matches an incoming order using price-time priority and emits reports.
-    void process_order(Order* incoming, EmitReport&& emit_report) {
+    void process_order(Order* incoming,
+                       EmitReport&& emit_report,
+                       const char* event_timestamp = nullptr) {
         const std::size_t idx = instrument_index(incoming->instrument);
         OrderBook& opp_book = incoming->side == Side::BUY ? sell_books_[idx] : buy_books_[idx];
         bool matched_any = false;
@@ -53,8 +55,7 @@ public:
             const ExecStatus resting_status =
                 resting->quantity == 0 ? ExecStatus::FILL : ExecStatus::PFILL;
 
-            char trade_timestamp[20] = {0};
-            ExecutionReport::fill_current_timestamp(trade_timestamp, sizeof(trade_timestamp));
+            const char* trade_timestamp = event_timestamp;
 
             emit_report(report_pool_.allocate(incoming->oid,
                                               incoming->coid,
@@ -87,8 +88,7 @@ public:
             OrderBook& own_book = incoming->side == Side::BUY ? buy_books_[idx] : sell_books_[idx];
             own_book.add_order_known_valid(incoming->price, incoming);
             if (!matched_any) {
-                char new_timestamp[20] = {0};
-                ExecutionReport::fill_current_timestamp(new_timestamp, sizeof(new_timestamp));
+                const char* new_timestamp = event_timestamp;
                 emit_report(report_pool_.allocate(incoming->oid,
                                                   incoming->coid,
                                                   incoming->instrument,

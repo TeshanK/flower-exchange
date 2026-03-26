@@ -7,6 +7,7 @@ add_library(flower_exchange_lib STATIC
   matching/matching_engine.cpp
   io/csv_reader.cpp
   common/types.cpp
+  common/timestamp_cache.cpp
 )
 target_include_directories(flower_exchange_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(flower_exchange_lib PUBLIC common Boost::boost pthread)

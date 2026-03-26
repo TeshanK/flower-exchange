@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/mempool.h"
+#include "common/timestamp_cache.h"
 #include "common/types.h"
 #include "matching/matching_engine.h"
 #include "matching/order_book.h"
@@ -88,6 +89,7 @@ private:
     std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)> buy_books_;
     std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)> sell_books_;
     std::unique_ptr<MatchingEngine> matcher_;
+    TimestampCache timestamp_cache_;
 
     boost::lockfree::spsc_queue<InboundOrderMsg,
                                 boost::lockfree::capacity<RuntimeConfig::kInboundQueueCapacity>>
