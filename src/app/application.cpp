@@ -30,10 +30,8 @@ std::size_t copy_text_len(char* dst, std::size_t dst_size, const char* src) {
     const std::size_t max_copy = dst_size - 1;
     std::size_t copy_len = 0;
     while (copy_len < max_copy && src[copy_len] != '\0') {
+        dst[copy_len] = src[copy_len];
         ++copy_len;
-    }
-    if (copy_len > 0) {
-        std::memcpy(dst, src, copy_len);
     }
     dst[copy_len] = '\0';
     return copy_len;
