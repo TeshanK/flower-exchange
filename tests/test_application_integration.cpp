@@ -251,9 +251,18 @@ TEST(ApplicationIntegrationTest, ExampleFixturesMatchCanonicalOutput) {
             "ord4,aa16,Tulip,1,Reject,100,-1.00,Invalid price,",
             "ord5,aa17,Orchid,1,Reject,1000,-1.00,Invalid price,",
         },
+        {
+            "Order ID,Client Order Id,Instrument,Side,Exec Status,Quantity,Price,Reason,Timestamp",
+            "ord1,aa12,Rose,2,New,200,45.00,,",
+            "ord2,aa13,Rose,2,New,200,45.00,,",
+            "ord3,aa14,Rose,1,Fill,100,45.00,,",
+            "ord1,aa12,Rose,2,Pfill,100,45.00,,",
+            "ord4,aa15,Rose,1,Fill,100,45.00,,",
+            "ord1,aa12,Rose,2,Fill,100,45.00,,",
+        },
     };
 
-    for (int i = 1; i <= 7; ++i) {
+    for (int i = 1; i <= 8; ++i) {
         const std::string input_name = "input_files/example" + std::to_string(i) + "_orders.csv";
         const std::string output_name = "example" + std::to_string(i) + "_orders_reports.csv";
 
@@ -310,7 +319,7 @@ TEST(ApplicationIntegrationTest, RepeatedRunOutputIsByteStable) {
 }
 
 TEST(ApplicationIntegrationTest, AllExampleOutputsAreByteStableAcrossFreshProcesses) {
-    for (int i = 1; i <= 7; ++i) {
+    for (int i = 1; i <= 8; ++i) {
         const std::string input_name = "input_files/example" + std::to_string(i) + "_orders.csv";
         const std::string output_name = "example" + std::to_string(i) + "_orders_reports.csv";
 
@@ -339,7 +348,7 @@ TEST(ApplicationIntegrationTest, AllExampleOutputsKeepStableCsvShape) {
     const std::string expected_header =
         "Order ID,Client Order Id,Instrument,Side,Exec Status,Quantity,Price,Reason,Timestamp";
 
-    for (int i = 1; i <= 7; ++i) {
+    for (int i = 1; i <= 8; ++i) {
         const std::string input_name = "input_files/example" + std::to_string(i) + "_orders.csv";
         const std::string output_name = "example" + std::to_string(i) + "_orders_reports.csv";
 

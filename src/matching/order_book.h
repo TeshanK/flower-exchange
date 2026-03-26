@@ -39,6 +39,12 @@ public:
         price_level_tails_[tick]->next = order;
         price_level_tails_[tick] = order;
     }
+
+    // Returns head order at a price level without removing it.
+    inline Order* peek_order_known_valid(PriceTick tick) const {
+        return price_levels_[tick];
+    }
+
     // Hot-path pop variant when tick validity is guaranteed by caller.
     inline Order* pop_order_known_valid(PriceTick tick) {
         Order* head = price_levels_[tick];
