@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/runtime_config.h"
+
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -8,8 +10,9 @@
 #include <string_view>
 #include <ctime>
 
-constexpr double TICK_SIZE = 0.01;
 using PriceTick = uint64_t;
+
+constexpr double TICK_SIZE = RuntimeConfig::kTickSize;
 
 enum class Side : uint8_t {
     BUY = 1,
@@ -32,13 +35,13 @@ enum class ExecStatus : uint8_t {
     PFILL = 3,
 };
 
-constexpr int QUANTITY_MULTIPLE = 10;
-constexpr int MIN_QUANTITY = 10;
-constexpr int MAX_QUANTITY = 1000;
-constexpr std::size_t ORDER_BOOK_TICK_CAPACITY = 100001;
-constexpr PriceTick MAX_VALID_TICK = ORDER_BOOK_TICK_CAPACITY - 1;
-constexpr double MAX_VALID_PRICE =
-    static_cast<double>(MAX_VALID_TICK) * TICK_SIZE;
+constexpr int QUANTITY_MULTIPLE = RuntimeConfig::kQuantityMultiple;
+constexpr int MIN_QUANTITY = RuntimeConfig::kMinQuantity;
+constexpr int MAX_QUANTITY = RuntimeConfig::kMaxQuantity;
+constexpr double MIN_VALID_PRICE = RuntimeConfig::kMinValidPrice;
+constexpr std::size_t ORDER_BOOK_TICK_CAPACITY = RuntimeConfig::kOrderBookTickCapacity;
+constexpr PriceTick MAX_VALID_TICK = static_cast<PriceTick>(RuntimeConfig::kMaxValidTick);
+constexpr double MAX_VALID_PRICE = RuntimeConfig::kMaxValidPrice;
 
 // Instrument names used for parsing and output text.
 extern const std::array<const char*, 5> kValidInstrumentNames;

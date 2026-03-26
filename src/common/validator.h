@@ -34,7 +34,7 @@ inline std::pair<bool, const char*> validate_order(InstrumentType instrument,
         return {false, "Invalid size"};
     }
 
-    if (!std::isfinite(price) || price <= 0.0 || price > MAX_VALID_PRICE) {
+    if (!std::isfinite(price) || price <= MIN_VALID_PRICE || price > MAX_VALID_PRICE) {
         return {false, "Invalid price"};
     }
 

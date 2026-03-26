@@ -195,14 +195,18 @@ void format_order_id(char* oid, std::size_t oid_size, uint64_t id) {
 Application::Application()
     : initialized_(false),
       next_oid_(1),
-      order_pool_(65536),
-      report_pool_(131072),
-            buy_books_{OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                 OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                 OrderBook(ORDER_BOOK_TICK_CAPACITY)},
-            sell_books_{OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                    OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                    OrderBook(ORDER_BOOK_TICK_CAPACITY)} {}
+    order_pool_(RuntimeConfig::kOrderPoolInitialCapacity),
+    report_pool_(RuntimeConfig::kReportPoolInitialCapacity),
+        buy_books_{OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity)},
+        sell_books_{OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity)} {}
 
 Application::~Application() {
     shutdown();
@@ -421,8 +425,12 @@ void Application::process_file(const std::string& input_path) {
         outbound_queue_.pop(tmp);
     }
 
-    std::fill(buy_books_.begin(), buy_books_.end(), OrderBook(ORDER_BOOK_TICK_CAPACITY));
-    std::fill(sell_books_.begin(), sell_books_.end(), OrderBook(ORDER_BOOK_TICK_CAPACITY));
+    std::fill(buy_books_.begin(),
+              buy_books_.end(),
+              OrderBook(RuntimeConfig::kOrderBookTickCapacity));
+    std::fill(sell_books_.begin(),
+              sell_books_.end(),
+              OrderBook(RuntimeConfig::kOrderBookTickCapacity));
     rebuild_matcher();
 
     std::filesystem::create_directories("output");
