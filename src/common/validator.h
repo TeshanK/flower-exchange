@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/types.h"
+#include "common/macros.h"
 
 #include <cmath>
 #include <string_view>
@@ -20,21 +21,21 @@ inline std::pair<bool, const char*> validate_order(InstrumentType instrument,
                                                    int side,
                                                    double price,
                                                    int quantity) {
-    if (instrument == InstrumentType::COUNT) {
+    if (UNLIKELY(instrument == InstrumentType::COUNT)) {
         return {false, "Invalid instrument"};
     }
 
-    if (side != static_cast<int>(Side::BUY) &&
-        side != static_cast<int>(Side::SELL)) {
+    if (UNLIKELY(side != static_cast<int>(Side::BUY) &&
+        side != static_cast<int>(Side::SELL))) {
         return {false, "Invalid side"};
     }
 
-    if (quantity % QUANTITY_MULTIPLE != 0 || quantity < MIN_QUANTITY ||
-        quantity > MAX_QUANTITY) {
+    if (UNLIKELY(quantity % QUANTITY_MULTIPLE != 0 || quantity < MIN_QUANTITY ||
+        quantity > MAX_QUANTITY)) {
         return {false, "Invalid size"};
     }
 
-    if (!std::isfinite(price) || price <= 0.0 || price > MAX_VALID_PRICE) {
+    if (UNLIKELY(!std::isfinite(price) || price <= MIN_VALID_PRICE || price > MAX_VALID_PRICE)) {
         return {false, "Invalid price"};
     }
 

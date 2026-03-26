@@ -6,10 +6,14 @@
 	configure-ubsan build-ubsan test-ubsan \
 	configure-msan build-msan test-msan \
 	configure-tsan build-tsan test-tsan \
+	pgo \
 	run run-example \
 	stress stress-debug stress-release stress-relwithdebinfo stress-asan stress-ubsan stress-msan stress-tsan \
 	stress-determinism stress-determinism-debug stress-determinism-release stress-determinism-relwithdebinfo stress-determinism-asan stress-determinism-ubsan stress-determinism-msan stress-determinism-tsan \
 	test-all clean clean-output
+
+PGO_PROFILE_DIR := $(CURDIR)/build-pgo-profile
+PGO_BUILD_DIR := build-pgo
 
 help:
 	@echo "Flower Exchange Makefile targets"
@@ -29,6 +33,7 @@ help:
 	@echo "  make test-msan           # ctest --preset test-msan"
 	@echo "  make build-tsan          # cmake --build --preset build-tsan"
 	@echo "  make test-tsan           # ctest --preset test-tsan"
+	@echo "  make pgo                 # 2-pass PGO build (-fprofile-generate, then -fprofile-use)"
 	@echo ""
 	@echo "Run application:"
 	@echo "  make run                 # launch REPL (build/src/flower_exchange)"
@@ -113,6 +118,25 @@ build-tsan: configure-tsan
 test-tsan: build-tsan
 	ctest --preset test-tsan
 
+pgo:
+	@if [! -f big_orders.csv]; then \
+		echo "Need big_orders.csv for PGO profiling."; \
+		exit 1; \
+	else \
+		echo "big_orders.csv exists."; \
+	fi
+	rm -rf $(PGO_BUILD_DIR) $(PGO_PROFILE_DIR)
+	cmake -S . -B $(PGO_BUILD_DIR) -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -fprofile-generate=$(PGO_PROFILE_DIR)" \
+		-DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -fprofile-generate=$(PGO_PROFILE_DIR)"
+	cmake --build $(PGO_BUILD_DIR) -j
+	ctest --test-dir $(PGO_BUILD_DIR) --output-on-failure
+	FLOWER_EXCHANGE_RUN_STRESS=1 ctest --test-dir $(PGO_BUILD_DIR) --output-on-failure -R StressLargeFiles
+	cmake -S . -B $(PGO_BUILD_DIR) -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -fprofile-use=$(PGO_PROFILE_DIR) -fprofile-correction" \
+		-DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -fprofile-use=$(PGO_PROFILE_DIR) -fprofile-correction"
+	cmake --build $(PGO_BUILD_DIR) -j
+
 run: build-release
 	./build-release/src/flower_exchange
 
@@ -168,7 +192,7 @@ stress-determinism: stress-determinism-debug stress-determinism-release stress-d
 test-all: test-debug test-release test-relwithdebinfo test-asan test-ubsan test-msan test-tsan
 
 clean:
-	rm -rf build build-release build-relwithdebinfo build-asan build-ubsan build-msan build-tsan
+	rm -rf build build-release build-relwithdebinfo build-asan build-ubsan build-msan build-tsan $(PGO_BUILD_DIR) $(PGO_PROFILE_DIR)
 
 clean-output:
 	rm -f output/*_reports.csv

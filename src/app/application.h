@@ -89,6 +89,10 @@ private:
     std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)> sell_books_;
     std::unique_ptr<MatchingEngine> matcher_;
 
-    boost::lockfree::spsc_queue<InboundOrderMsg, boost::lockfree::capacity<1 << 16>> inbound_queue_;
-    boost::lockfree::spsc_queue<OutboundReportMsg, boost::lockfree::capacity<1 << 17>> outbound_queue_;
+    boost::lockfree::spsc_queue<InboundOrderMsg,
+                                boost::lockfree::capacity<RuntimeConfig::kInboundQueueCapacity>>
+        inbound_queue_;
+    boost::lockfree::spsc_queue<OutboundReportMsg,
+                                boost::lockfree::capacity<RuntimeConfig::kOutboundQueueCapacity>>
+        outbound_queue_;
 };

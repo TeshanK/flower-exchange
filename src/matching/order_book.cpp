@@ -1,4 +1,5 @@
 #include "matching/order_book.h"
+#include "common/macros.h"
 
 #include <algorithm>
 
@@ -22,7 +23,7 @@ int64_t OrderBook::find_next_from(PriceTick tick) const {
     auto word = static_cast<std::size_t>(tick / 64);
     const auto bit_in_word = static_cast<std::size_t>(tick % 64);
 
-    if (word >= words) {
+    if (UNLIKELY(word >= words)) {
         return -1;
     }
 
@@ -41,7 +42,7 @@ int64_t OrderBook::find_next_from(PriceTick tick) const {
     const auto it = std::find_if(mask_.begin() + static_cast<std::ptrdiff_t>(word + 1),
                                  mask_.end(),
                                  [](uint64_t w) -> bool { return w != 0; });
-    if (it != mask_.end()) {
+    if (LIKELY(it != mask_.end())) {
         const auto i = static_cast<std::size_t>(std::distance(mask_.begin(), it));
         return static_cast<int64_t>(i * 64 + __builtin_ctzll(*it));
     }
@@ -49,13 +50,13 @@ int64_t OrderBook::find_next_from(PriceTick tick) const {
 }
 
 int64_t OrderBook::find_prev_from(PriceTick tick) const {
-    if (mask_.empty()) {
+    if (UNLIKELY(mask_.empty())) {
         return -1;
     }
 
     auto word = static_cast<std::size_t>(tick / 64);
     const auto bit_in_word = static_cast<std::size_t>(tick % 64);
-    if (word >= mask_.size()) {
+    if (UNLIKELY(word >= mask_.size())) {
         word = mask_.size() - 1;
     }
 

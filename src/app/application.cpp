@@ -3,6 +3,7 @@
 #include "common/thread_utils.h"
 #include "common/validator.h"
 #include "io/csv_reader.h"
+#include "common/macros.h"
 
 #include <algorithm>
 #include <array>
@@ -19,28 +20,27 @@
 namespace {
 
 std::size_t copy_text_len(char* dst, std::size_t dst_size, const char* src) {
-    if (!dst || dst_size == 0) {
+    if (UNLIKELY(!dst || dst_size == 0)) {
         return 0;
     }
     dst[0] = '\0';
-    if (!src) {
+
+    if (UNLIKELY(!src)) {
         return 0;
     }
 
     const std::size_t max_copy = dst_size - 1;
     std::size_t copy_len = 0;
     while (copy_len < max_copy && src[copy_len] != '\0') {
+        dst[copy_len] = src[copy_len];
         ++copy_len;
-    }
-    if (copy_len > 0) {
-        std::memcpy(dst, src, copy_len);
     }
     dst[copy_len] = '\0';
     return copy_len;
 }
 
 void copy_text(char* dst, std::size_t dst_size, std::string_view src) {
-    if (!dst || dst_size == 0) {
+    if (UNLIKELY(!dst || dst_size == 0)) {
         return;
     }
     std::size_t copy_len = std::min(src.size(), dst_size - 1);
@@ -68,7 +68,7 @@ const std::array<std::array<char, 5>, MAX_QUANTITY + 1> kQuantityText = []()
     std::array<std::array<char, 5>, MAX_QUANTITY + 1> out{};
     for (int i = 0; i <= MAX_QUANTITY; ++i) {
         auto result = std::to_chars(out[i].data(), out[i].data() + out[i].size() - 1, i);
-        if (result.ec == std::errc()) {
+        if (UNLIKELY(result.ec == std::errc())) {
             *result.ptr = '\0';
         } else {
             out[i][0] = '0';
@@ -102,7 +102,7 @@ std::size_t write_side_to_buffer(char* out, int side) {
         return 1;
     }
     auto result = std::to_chars(out, out + 16, side);
-    if (result.ec == std::errc()) {
+    if (UNLIKELY(result.ec == std::errc())) {
         return static_cast<std::size_t>(result.ptr - out);
     }
     out[0] = '0';
@@ -118,7 +118,7 @@ std::size_t write_quantity_to_buffer(char* out, int quantity) {
         return len;
     }
     auto result = std::to_chars(out, out + 16, quantity);
-    if (result.ec == std::errc()) {
+    if (UNLIKELY(result.ec == std::errc())) {
         return static_cast<std::size_t>(result.ptr - out);
     }
     out[0] = '0';
@@ -176,14 +176,14 @@ void append_csv_row(std::string& dst, const OutboundReportMsg& msg) {
 }
 
 void format_order_id(char* oid, std::size_t oid_size, uint64_t id) {
-    if (!oid || oid_size < 5) {
+    if (UNLIKELY(!oid || oid_size < 5)) {
         return;
     }
     oid[0] = 'o';
     oid[1] = 'r';
     oid[2] = 'd';
     auto result = std::to_chars(oid + 3, oid + oid_size - 1, id);
-    if (result.ec == std::errc()) {
+    if (UNLIKELY(result.ec == std::errc())) {
         *result.ptr = '\0';
         return;
     }
@@ -195,14 +195,18 @@ void format_order_id(char* oid, std::size_t oid_size, uint64_t id) {
 Application::Application()
     : initialized_(false),
       next_oid_(1),
-      order_pool_(65536),
-      report_pool_(131072),
-            buy_books_{OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                 OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                 OrderBook(ORDER_BOOK_TICK_CAPACITY)},
-            sell_books_{OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                    OrderBook(ORDER_BOOK_TICK_CAPACITY), OrderBook(ORDER_BOOK_TICK_CAPACITY),
-                                    OrderBook(ORDER_BOOK_TICK_CAPACITY)} {}
+    order_pool_(RuntimeConfig::kOrderPoolInitialCapacity),
+    report_pool_(RuntimeConfig::kReportPoolInitialCapacity),
+        buy_books_{OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                 OrderBook(RuntimeConfig::kOrderBookTickCapacity)},
+        sell_books_{OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity),
+                OrderBook(RuntimeConfig::kOrderBookTickCapacity)} {}
 
 Application::~Application() {
     shutdown();
@@ -327,7 +331,7 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
         auto validation =
             validate_order(instrument, msg.side, msg.price, msg.quantity);
 
-        if (!validation.first) {
+        if (UNLIKELY(!validation.first)) {
             std::array<char, 20> reject_timestamp{};
             ExecutionReport::fill_current_timestamp(reject_timestamp.data(), reject_timestamp.size());
             ExecutionReport* reject = report_pool_.allocate(
@@ -353,7 +357,7 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
         }
 
         const PriceTick price_ticks = double_to_ticks(msg.price);
-        if (price_ticks > MAX_VALID_TICK) {
+        if (UNLIKELY(price_ticks > MAX_VALID_TICK)) {
             std::array<char, 20> reject_timestamp{};
             ExecutionReport::fill_current_timestamp(reject_timestamp.data(), reject_timestamp.size());
             ExecutionReport* reject = report_pool_.allocate(
@@ -421,8 +425,12 @@ void Application::process_file(const std::string& input_path) {
         outbound_queue_.pop(tmp);
     }
 
-    std::fill(buy_books_.begin(), buy_books_.end(), OrderBook(ORDER_BOOK_TICK_CAPACITY));
-    std::fill(sell_books_.begin(), sell_books_.end(), OrderBook(ORDER_BOOK_TICK_CAPACITY));
+    std::fill(buy_books_.begin(),
+              buy_books_.end(),
+              OrderBook(RuntimeConfig::kOrderBookTickCapacity));
+    std::fill(sell_books_.begin(),
+              sell_books_.end(),
+              OrderBook(RuntimeConfig::kOrderBookTickCapacity));
     rebuild_matcher();
 
     std::filesystem::create_directories("output");

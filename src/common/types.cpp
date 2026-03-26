@@ -1,4 +1,5 @@
 #include "common/types.h"
+#include "common/macros.h"
 
 #include <charconv>
 #include <cmath>
@@ -11,16 +12,16 @@ const std::array<const char*, 5> kValidInstrumentNames = {
 };
 
 PriceTick double_to_ticks(double price) {
-    if (!std::isfinite(price)) {
+    if (UNLIKELY(!std::isfinite(price))) {
         return std::numeric_limits<PriceTick>::max();
     }
-    if (price <= 0.0) {
+    if (UNLIKELY(price <= 0.0)) {
         return 0;
     }
 
     const double scaled = price / TICK_SIZE;
     const auto max_tick = static_cast<double>(std::numeric_limits<PriceTick>::max());
-    if (scaled >= max_tick) {
+    if (UNLIKELY(scaled >= max_tick)) {
         return std::numeric_limits<PriceTick>::max();
     }
     return static_cast<PriceTick>(std::llround(scaled));
@@ -226,7 +227,7 @@ double string_view_to_double(std::string_view sv) {
 */
 std::size_t format_ticks_to_buffer(PriceTick ticks, char* buffer, std::size_t buffer_size) {
     // The minimum price is "0.00" so we need at least 5 bytes to represent a valid price + null terminator
-    if (!buffer || buffer_size < 5) {
+    if (UNLIKELY(!buffer || buffer_size < 5)) {
         return 0;
     }
 
@@ -236,7 +237,7 @@ std::size_t format_ticks_to_buffer(PriceTick ticks, char* buffer, std::size_t bu
 
     // convert the integer part to string
     auto int_result = std::to_chars(buffer, buffer + buffer_size, integer_part);
-    if (int_result.ec != std::errc()) {
+    if (UNLIKELY(int_result.ec != std::errc())) {
         buffer[0] = '\0';
         return 0;
     }
@@ -244,7 +245,7 @@ std::size_t format_ticks_to_buffer(PriceTick ticks, char* buffer, std::size_t bu
     // check if we have enough space for the fraction part ".00" + null terminator so we need 4 bytes
     char* out = int_result.ptr;
     const char* end = buffer + buffer_size;
-    if (out + 4 > end) {
+    if (UNLIKELY(out + 4 > end)) {
         buffer[0] = '\0';
         return 0;
     }
@@ -268,7 +269,7 @@ std::size_t format_ticks_to_buffer(PriceTick ticks, char* buffer, std::size_t bu
 * Returns the number of characters written exclusing the null terminator, or 0 on error.
 */
 std::size_t format_price_to_buffer(double price, char* buffer, std::size_t buffer_size) {
-    if (!buffer || buffer_size == 0) {
+    if (UNLIKELY(!buffer || buffer_size == 0)) {
         return 0;
     }
 
@@ -279,14 +280,14 @@ std::size_t format_price_to_buffer(double price, char* buffer, std::size_t buffe
         }
     }
 
-    if (!std::isfinite(price) || buffer_size < 5) {
+    if (UNLIKELY(!std::isfinite(price) || buffer_size < 5)) {
         buffer[0] = '\0';
         return 0;
     }
 
     const double scaled = price * 100.0;
-    if (scaled > static_cast<double>(std::numeric_limits<long long>::max()) ||
-        scaled < static_cast<double>(std::numeric_limits<long long>::min())) {
+    if (UNLIKELY(scaled > static_cast<double>(std::numeric_limits<long long>::max()) ||
+        scaled < static_cast<double>(std::numeric_limits<long long>::min()))) {
         buffer[0] = '\0';
         return 0;
     }
@@ -303,7 +304,7 @@ std::size_t format_price_to_buffer(double price, char* buffer, std::size_t buffe
     char* out = buffer;
     char* end = buffer + buffer_size;
 
-    if (negative) {
+    if (UNLIKELY(negative)) {
         if (out + 1 >= end) {
             buffer[0] = '\0';
             return 0;
@@ -312,13 +313,13 @@ std::size_t format_price_to_buffer(double price, char* buffer, std::size_t buffe
     }
 
     auto int_result = std::to_chars(out, end, integer_part);
-    if (int_result.ec != std::errc()) {
+    if (UNLIKELY(int_result.ec != std::errc())) {
         buffer[0] = '\0';
         return 0;
     }
     out = int_result.ptr;
 
-    if (out + 4 > end) {
+    if (UNLIKELY(out + 4 > end)) {
         buffer[0] = '\0';
         return 0;
     }
