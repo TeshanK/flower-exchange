@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/macros.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -17,7 +19,7 @@ public:
 
     // Allocates one object from free list, growing pool when exhausted.
     template <typename... Args> T* allocate(Args&&... args) {
-        if (!free_list_head_) {
+        if (UNLIKELY(!free_list_head_)) {
             grow();
         }
 
@@ -35,7 +37,7 @@ public:
         const auto* node = reinterpret_cast<const Node*>(ptr);
         for (std::size_t ci = 0; ci < chunks_.size(); ++ci) {
             const Node* base = chunks_[ci].data();
-            if (node >= base && node < base + chunks_[ci].size()) {
+            if (LIKELY(node >= base && node < base + chunks_[ci].size())) {
                 return chunk_offsets_[ci] + static_cast<std::size_t>(node - base);
             }
         }
@@ -71,7 +73,7 @@ private:
 
     // Resolves global index to chunk-local coordinate.
     [[nodiscard]] std::pair<std::size_t, std::size_t> resolveIndex(std::size_t idx) const {
-        if (idx >= total_capacity_) {
+        if (UNLIKELY(idx >= total_capacity_)) {
             throw std::out_of_range("MemPool index out of bounds");
         }
 
@@ -90,7 +92,7 @@ private:
 
     // Shared pointer deallocation logic with ownership checks.
     void deallocateImpl(const T* ptr) {
-        if (!ptr) {
+        if (UNLIKELY(!ptr)) {
             return;
         }
 
@@ -133,11 +135,11 @@ private:
                 break;
         }
 
-        if (!found) {
+        if (UNLIKELY(!found)) {
             throw std::invalid_argument("Element not in this Memory pool");
         }
 
-        if (freed_node->is_free) {
+        if (UNLIKELY(freed_node->is_free)) {
             throw std::invalid_argument("Double free detected");
         }
 

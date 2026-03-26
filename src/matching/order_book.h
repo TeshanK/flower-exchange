@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/types.h"
+#include "common/macros.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -13,7 +14,7 @@ public:
 
     // Hot-path insertion variant when tick validity is guaranteed by caller.
     inline void add_order_known_valid(PriceTick tick, Order* order) {
-        if (!order) {
+        if (UNLIKELY(!order)) {
             return;
         }
 
@@ -41,7 +42,7 @@ public:
     // Hot-path pop variant when tick validity is guaranteed by caller.
     inline Order* pop_order_known_valid(PriceTick tick) {
         Order* head = price_levels_[tick];
-        if (!head) {
+        if (UNLIKELY(!head)) {
             return nullptr;
         }
 
