@@ -357,30 +357,6 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
         }
 
         const PriceTick price_ticks = double_to_ticks(msg.price);
-        if (UNLIKELY(price_ticks > MAX_VALID_TICK)) {
-            std::array<char, 20> reject_timestamp{};
-            ExecutionReport::fill_current_timestamp(reject_timestamp.data(), reject_timestamp.size());
-            ExecutionReport* reject = report_pool_.allocate(
-                oid.data(),
-                msg.coid,
-                InstrumentType::COUNT,
-                (msg.side == static_cast<int>(Side::SELL) ? Side::SELL : Side::BUY),
-                0,
-                static_cast<uint16_t>(msg.quantity > 0 ? msg.quantity : 0),
-                ExecStatus::REJECTED,
-                "Invalid price",
-                reject_timestamp.data());
-
-            OutboundReportMsg out{};
-            fill_outbound_common_fields(out, reject, msg.instrument, msg.side);
-            out.price_text_len = static_cast<uint8_t>(
-                format_price_to_buffer(msg.price, out.price_text, sizeof(out.price_text)));
-            out.seq = msg.seq;
-
-            spin_until_success([&]() -> bool { return outbound_queue_.push(out); }, 100);
-            report_pool_.deallocate(reject);
-            continue;
-        }
 
         Order* order = order_pool_.allocate(
             oid.data(),
@@ -390,19 +366,22 @@ void Application::matching_consumer(std::atomic<bool>& producer_done,
             price_ticks,
             static_cast<uint16_t>(msg.quantity));
 
-        matcher_->process_order(order, [&](ExecutionReport* report) -> void {
-            OutboundReportMsg out{};
-            fill_outbound_common_fields(out,
-                                        report,
-                                        instrument_to_string(report->instrument),
-                                        static_cast<int>(report->side));
-            out.price_text_len = static_cast<uint8_t>(
-                format_ticks_to_buffer(report->price, out.price_text, sizeof(out.price_text)));
-            out.seq = msg.seq;
+        matcher_->process_order(
+            order,
+            [&](ExecutionReport* report) -> void {
+                OutboundReportMsg out{};
+                fill_outbound_common_fields(out,
+                                            report,
+                                            instrument_to_string(report->instrument),
+                                            static_cast<int>(report->side));
+                out.price_text_len = static_cast<uint8_t>(
+                    format_ticks_to_buffer(report->price, out.price_text, sizeof(out.price_text)));
+                out.seq = msg.seq;
 
-            spin_until_success([&]() -> bool { return outbound_queue_.push(out); }, 100);
-            report_pool_.deallocate(report);
-        });
+                spin_until_success([&]() -> bool { return outbound_queue_.push(out); }, 100);
+                report_pool_.deallocate(report);
+            },
+            event_timestamp.data());
     }
 
     const auto matcher_end = std::chrono::steady_clock::now();
