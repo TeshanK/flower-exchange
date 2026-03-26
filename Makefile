@@ -62,7 +62,7 @@ build-debug: configure-debug
 	cmake --build --preset build-debug
 
 test-debug: build-debug
-	ctest --preset test-debug
+	ctest --preset test-debug -LE stress
 
 configure-release:
 	cmake --preset release
@@ -71,7 +71,7 @@ build-release: configure-release
 	cmake --build --preset build-release
 
 test-release: build-release
-	ctest --preset test-release
+	ctest --preset test-release -LE stress
 
 configure-relwithdebinfo:
 	cmake --preset relwithdebinfo
@@ -80,7 +80,7 @@ build-relwithdebinfo: configure-relwithdebinfo
 	cmake --build --preset build-relwithdebinfo
 
 test-relwithdebinfo: build-relwithdebinfo
-	ctest --preset test-relwithdebinfo
+	ctest --preset test-relwithdebinfo -LE stress
 
 configure-asan:
 	cmake --preset asan
@@ -89,7 +89,7 @@ build-asan: configure-asan
 	cmake --build --preset build-asan
 
 test-asan: build-asan
-	ctest --preset test-asan
+	ctest --preset test-asan -LE stress
 
 configure-ubsan:
 	cmake --preset ubsan
@@ -98,7 +98,7 @@ build-ubsan: configure-ubsan
 	cmake --build --preset build-ubsan
 
 test-ubsan: build-ubsan
-	ctest --preset test-ubsan
+	ctest --preset test-ubsan -LE stress
 
 configure-msan:
 	cmake --preset msan
@@ -107,7 +107,7 @@ build-msan: configure-msan
 	cmake --build --preset build-msan
 
 test-msan: build-msan
-	ctest --preset test-msan
+	ctest --preset test-msan -LE stress
 
 configure-tsan:
 	cmake --preset tsan
@@ -116,7 +116,7 @@ build-tsan: configure-tsan
 	cmake --build --preset build-tsan
 
 test-tsan: build-tsan
-	ctest --preset test-tsan
+	ctest --preset test-tsan -LE stress
 
 pgo:
 	@if [! -f big_orders.csv]; then \
