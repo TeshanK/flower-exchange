@@ -38,7 +38,7 @@ public:
                 break;
             }
 
-            Order* resting = opp_book.pop_order_known_valid(best_price);
+            Order* resting = opp_book.peek_order_known_valid(best_price);
             if (!resting) {
                 continue;
             }
@@ -76,9 +76,9 @@ public:
                                               "",
                                               trade_timestamp));
 
-            if (resting->quantity > 0) {
-                opp_book.add_order_known_valid(best_price, resting);
-            } else {
+            if (resting->quantity == 0) {
+                Order* consumed = opp_book.pop_order_known_valid(best_price);
+                (void)consumed;
                 order_pool_.deallocate(resting);
             }
         }

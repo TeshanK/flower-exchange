@@ -451,7 +451,7 @@ void Application::process_file(const std::string& input_path) {
     std::atomic<uint64_t> producer_ns{0};
     std::atomic<uint64_t> matcher_ns{0};
 
-    std::thread* producer = createAndStartThread(
+    auto producer = createAndStartThread(
         0,
         "io-producer",
         &Application::io_producer,
@@ -461,7 +461,7 @@ void Application::process_file(const std::string& input_path) {
         std::ref(produced_orders),
         std::ref(producer_ns));
 
-    std::thread* matcher = createAndStartThread(
+    auto matcher = createAndStartThread(
         1,
         "matcher",
         &Application::matching_consumer,
@@ -498,10 +498,15 @@ void Application::process_file(const std::string& input_path) {
         }
     }
 
-    producer->join();
-    matcher->join();
-    delete producer;
-    delete matcher;
+    if (producer->joinable()) {
+        producer->join();
+        producer_done.store(true);
+    }
+
+    if (matcher->joinable()) {
+        matcher->join();
+        matcher_done.store(true);
+    }
 
     if (!write_batch.empty()) {
         out_file.write(write_batch.data(), static_cast<std::streamsize>(write_batch.size()));

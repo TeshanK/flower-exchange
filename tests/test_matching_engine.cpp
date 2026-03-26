@@ -164,3 +164,41 @@ TEST(MatchingEngineTest, SamePriceLevelFifoOrderIsStable) {
     EXPECT_EQ(passive_fill_ids[1], "ord2");
     EXPECT_EQ(passive_fill_ids[2], "ord3");
 }
+
+TEST(MatchingEngineTest, PartiallyFilledRestingOrderKeepsTimePriority) {
+    MemPool<Order> order_pool(128);
+    MemPool<ExecutionReport> rep_pool(128);
+    std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)> buy_books{
+        OrderBook(1024), OrderBook(1024), OrderBook(1024), OrderBook(1024), OrderBook(1024)};
+    std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)> sell_books{
+        OrderBook(1024), OrderBook(1024), OrderBook(1024), OrderBook(1024), OrderBook(1024)};
+
+    MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
+
+    Order* s1 = order_pool.allocate("ord1", "c1", InstrumentType::ROSE, Side::SELL, 45, 200);
+    Order* s2 = order_pool.allocate("ord2", "c2", InstrumentType::ROSE, Side::SELL, 45, 200);
+    Order* b1 = order_pool.allocate("ord3", "cb1", InstrumentType::ROSE, Side::BUY, 50, 100);
+    Order* b2 = order_pool.allocate("ord4", "cb2", InstrumentType::ROSE, Side::BUY, 55, 100);
+
+    std::vector<std::string> passive_fill_ids;
+    engine.process_order(s1, [&](ExecutionReport*) -> void {});
+    engine.process_order(s2, [&](ExecutionReport*) -> void {});
+
+    engine.process_order(b1, [&](ExecutionReport* rep) -> void {
+        if ((rep->status == ExecStatus::PFILL || rep->status == ExecStatus::FILL) &&
+            rep->side == Side::SELL) {
+            passive_fill_ids.emplace_back(rep->oid);
+        }
+    });
+
+    engine.process_order(b2, [&](ExecutionReport* rep) -> void {
+        if ((rep->status == ExecStatus::PFILL || rep->status == ExecStatus::FILL) &&
+            rep->side == Side::SELL) {
+            passive_fill_ids.emplace_back(rep->oid);
+        }
+    });
+
+    ASSERT_EQ(passive_fill_ids.size(), 2u);
+    EXPECT_EQ(passive_fill_ids[0], "ord1");
+    EXPECT_EQ(passive_fill_ids[1], "ord1");
+}
