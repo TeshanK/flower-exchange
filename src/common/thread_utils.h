@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <pthread.h>
 #include <string>
 #include <thread>
@@ -31,15 +32,15 @@ inline bool setThreadCore(int core_id) noexcept {
 * @func: function to run in the thread
 * @args: arguments to pass to the function
 *
-* Returns pointer to the created thread object.  
+* Returns unique_ptr to the created thread object.
 */
 template <typename T, typename... Args>
-inline std::thread* createAndStartThread(int core_id,
-                                         const std::string& name,
-                                         T&& func,
-                                         Args&&... args) noexcept {
+inline std::unique_ptr<std::thread> createAndStartThread(int core_id,
+                                                         const std::string& name,
+                                                         T&& func,
+                                                         Args&&... args) noexcept {
     using FuncType = std::decay_t<T>;
-    auto t = new std::thread([
+    auto t = std::make_unique<std::thread>([
         core_id,
         name,
         fn = FuncType(std::forward<T>(func)),
