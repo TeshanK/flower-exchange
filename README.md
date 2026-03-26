@@ -65,7 +65,7 @@ The execution reports are generated in CSV format with the following columns:
   - Used `order_generator.py` to create large order files with varying sizes (10K, 100K, 1M, 10M orders)
   - Measured total processing time for each file and calculated throughput
 - Performance Metrics:
-  - Throughput: ~1M orders per second
+  - Throughput: ~1.5M orders per second
 
 ## References
 - Building Low Latency Applications with C++ by Sourav Ghosh
