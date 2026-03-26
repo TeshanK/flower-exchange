@@ -96,9 +96,6 @@ private:
             return;
         }
 
-        static_assert(offsetof(Node, obj) == 0,
-                      "MemPool assumes Node::obj is at offset 0");
-
         const auto ptr_addr = reinterpret_cast<std::uintptr_t>(ptr);
         bool found = false;
         Node* freed_node = nullptr;

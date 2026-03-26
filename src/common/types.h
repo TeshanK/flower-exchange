@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/runtime_config.h"
+#include "common/macros.h"
 
 #include <array>
 #include <chrono>
@@ -115,10 +116,10 @@ struct ExecutionReport {
     char timestamp[20];         // execution timestamp in "YYYYMMDD-HHMMSS.sss" format
 
     static inline void fill_current_timestamp(char* out, std::size_t out_size) {
-        if (!out || out_size == 0) {
+        if (UNLIKELY(!out || out_size == 0)) {
             return;
         }
-        if (out_size < 20) {
+        if (UNLIKELY(out_size < 20)) {
             out[0] = '\0';
             return;
         }
