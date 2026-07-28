@@ -30,7 +30,6 @@ QUIT
 - `src/app`: application orchestration
 - `tests`: unit, integration, stress tests
 - `input_files`: input csv files
-- `expected_reports`: expected output csv files
 - `output`: generated execution report csv files
 
 ## Accepted Order Format
