@@ -9,7 +9,7 @@
 class TcpListener
 {
 public:
-    std::optional<TcpListener> create(int port)
+    static std::optional<TcpListener> create(int port)
     {
         Socket server_sock{::socket(AF_INET, SOCK_STREAM, 0)};
         if (!server_sock.is_valid())
