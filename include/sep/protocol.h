@@ -1,15 +1,15 @@
+// SEP (Simple Exchange Protocol) message definitions
+// All multi-byte fields are encoded as little-endian unsigned integers.
+
 #pragma once
 
 #include <cstdint>
-
-// SEP (Simple Exchange Protocol) message definitions
 
 #pragma pack(push, 1) // Ensure no padding is added to the structures
 
 enum class Message_type : uint8_t {
     new_order = 1,
     execution_report = 2,
-    cancel_order = 3,
 };
 
 enum class Instrument_id : uint8_t {
@@ -40,7 +40,10 @@ enum class Rejection_reason: uint8_t {
     invalid_price = 4,
 };
 
+using Client_order_id = uint32_t;
+using Order_id = uint32_t;
 using Price_ticks = uint32_t;
+using Timestamp_ns = uint64_t;
 
 // Message header structure for both New_order and Execution_report messages.
 // Current version: 1
@@ -53,7 +56,7 @@ struct Message_header {
 // New_order payload structure
 struct New_order {
     Message_header header;
-    uint32_t client_order_id;       // Unique identifier for the order assigned by the client
+    Client_order_id client_order_id;       // Unique identifier for the order assigned by the client
     Instrument_id instrument_id;    // Identifier for the instrument being traded
     Side book_side;                 // Buy or sell side
     uint16_t quantity;              // Quantity of the order
@@ -63,9 +66,9 @@ struct New_order {
 // Execution_report payload structure
 struct Execution_report {
     Message_header header;
-    uint64_t timestamp;             // Nanoseconds since epoch when the execution report was generated
-    uint32_t order_id;              // Unique identifier for the order assigned by the server
-    uint32_t client_order_id;       // Unique identifier for the order assigned by the client
+    Timestamp_ns timestamp;             // Nanoseconds since epoch when the execution report was generated
+    Order_id order_id;              // Unique identifier for the order assigned by the server
+    Client_order_id client_order_id;       // Unique identifier for the order assigned by the client
     Instrument_id instrument_id;    // Identifier for the instrument being traded
     Side book_side;                 // Buy or sell side
     uint16_t quantity;              // Quantity of the order
