@@ -5,15 +5,18 @@
 #include <sep/tcp_listener.h>
 #include <print>
 #include <sep/order_codec.h>
+#include <types.h>
+#include <sequencer.h>
 
 
-void print_order(const New_order &new_order);
+void print_order(const Order &order);
 
-template <BufferFor<New_order> BufferImpl>
+template <BufferFor<Order> BufferImpl>
 class IngressService
 {
 public:
-    explicit IngressService(BufferImpl &input_buffer) : input_buffer_(input_buffer) {}
+    explicit IngressService(BufferImpl &input_buffer, Sequencer& sequencer) 
+    : input_buffer_(input_buffer), sequencer_(sequencer) {}
 
     void run(uint16_t port)
     {
@@ -40,22 +43,29 @@ private:
             {
                 break;
             }
-            print_order(result.value());
-            input_buffer_.push(result.value());
+
+            auto order = sequencer_.sequence(result.value());
+            print_order(order);
+            input_buffer_.push(std::move(order));
         }
     }
+
+
     BufferImpl &input_buffer_;
+    Sequencer& sequencer_;
     bool running_{true};
 };
 
-void print_order(const New_order &new_order)
+void print_order(const Order &order)
 {
-    std::println("version: {}", new_order.header.version);
-    std::println("message_type: {}", static_cast<uint8_t>(new_order.header.message_type));
-    std::println("body_length: {}", new_order.header.body_length);
-    std::println("client_order_id: {}", new_order.client_order_id);
-    std::println("instrument_id: {}", static_cast<uint8_t>(new_order.instrument_id));
-    std::println("book_side: {}", static_cast<uint8_t>(new_order.book_side));
-    std::println("quantity: {}", new_order.quantity);
-    std::println("price: {}", new_order.price);
+    std::println("version: {}", order.raw_order.header.version);
+    std::println("message_type: {}", static_cast<uint8_t>(order.raw_order.header.message_type));
+    std::println("body_length: {}", order.raw_order.header.body_length);
+    std::println("client_order_id: {}", order.raw_order.client_order_id);
+    std::println("instrument_id: {}", static_cast<uint8_t>(order.raw_order.instrument_id));
+    std::println("book_side: {}", static_cast<uint8_t>(order.raw_order.book_side));
+    std::println("quantity: {}", order.raw_order.quantity);
+    std::println("price: {}", order.raw_order.price);
+    std::println("sequence_number: {}", order.sequence_number);
+    std::println("ingress_timestamp: {}", order.ingress_timestamp);
 }

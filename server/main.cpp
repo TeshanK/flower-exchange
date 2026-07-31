@@ -1,6 +1,8 @@
 #include <sep/protocol.h>
 #include <stl_queue.h>
 #include <ingress_service.h>
+#include <types.h>
+#include <sequencer.h>
 
 #include <print>
 
@@ -8,9 +10,11 @@ int main()
 {
     std::println("Starting Server...");
 
-    STLQueue<New_order> input_buffer;
+    STLQueue<Order> input_buffer;
 
-    IngressService<STLQueue<New_order>> ingress_service(input_buffer);
+    Sequencer sequencer = {};
+
+    IngressService<STLQueue<Order>> ingress_service(input_buffer, sequencer);
 
     ingress_service.run(1234);
 
