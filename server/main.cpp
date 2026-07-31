@@ -2,6 +2,7 @@
 #include <sep/sep_socket.h>
 #include <sep/tcp_listener.h>
 #include <sep/tcp_connection.h>
+#include <sep/order_codec.h>
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -33,16 +34,15 @@ int run_ingress()
     {
         // TODO: handle nullopt case
         auto conn = listener->accept().value();
-        
+
         while (true)
         {
-            New_order new_order;
-            int rv = conn.read_exact(&new_order, sizeof(New_order));
-            if (rv < 0)
+            auto result = OrderCodec::decode_new_order(conn);
+            if (!result.has_value())
             {
                 break;
             }
-            print_order(new_order);
+            print_order(result.value());
         }
     }
     return 0;
