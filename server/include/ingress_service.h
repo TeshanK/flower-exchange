@@ -1,5 +1,6 @@
 #pragma once
 
+#include <risk_validator.h>
 #include <sep/protocol.h>
 #include <buffer.h>
 #include <sep/tcp_listener.h>
@@ -8,15 +9,14 @@
 #include <types.h>
 #include <sequencer.h>
 
-
 void print_order(const Order &order);
 
 template <BufferFor<Order> BufferImpl>
 class IngressService
 {
 public:
-    explicit IngressService(BufferImpl &input_buffer, Sequencer& sequencer) 
-    : input_buffer_(input_buffer), sequencer_(sequencer) {}
+    explicit IngressService(BufferImpl &input_buffer, Sequencer &sequencer)
+        : input_buffer_(input_buffer), sequencer_(sequencer) {}
 
     void run(uint16_t port)
     {
@@ -34,8 +34,8 @@ public:
     }
 
 private:
-
-    void handle_client(const TcpConnection &conn) {
+    void handle_client(const TcpConnection &conn)
+    {
         while (running_)
         {
             auto result = OrderCodec::decode_new_order(conn);
@@ -45,14 +45,26 @@ private:
             }
 
             auto order = sequencer_.sequence(result.value());
+
+            auto validation_result = RiskValidator::validate(order);
+            if (!validation_result)
+            {
+                Rejection_reason reason = validation_result.error();
+                std::println("Order #{} REJECTED by Risk Module. Reason code: {}",
+                             order.raw_order.client_order_id,
+                             static_cast<uint8_t>(reason));
+
+                // TODO: Send execution_report with status=rejected directly to Egress
+                continue; // Skip pushing to Matching Engine!
+            }
+
             print_order(order);
             input_buffer_.push(std::move(order));
         }
     }
 
-
     BufferImpl &input_buffer_;
-    Sequencer& sequencer_;
+    Sequencer &sequencer_;
     bool running_{true};
 };
 
