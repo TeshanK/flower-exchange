@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sep/protocol.h>
-#include <sep/tcp_connection.h>
+#include <network/tcp_connection.h>
 #include <expected>
 
 enum class Parse_error {

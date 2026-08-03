@@ -1,10 +1,10 @@
 #pragma once
 
-#include <sep/sep_socket.h>
+#include "socket.h"
+#include "tcp_connection.h"
 #include <optional>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sep/tcp_connection.h>
 
 class TcpListener
 {

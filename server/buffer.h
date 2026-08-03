@@ -4,7 +4,7 @@
 #include <optional>
 
 template <typename Q, typename T>
-concept BufferFor = requires(Q q, const T& const_item, T&& rvalue_item, T& out_item) {
+concept Buffer = requires(Q q, const T& const_item, T&& rvalue_item, T& out_item) {
     // true if success, false if full(if bounded)
     { q.push(const_item) } -> std::convertible_to<bool>;
     { q.push(std::move(rvalue_item)) } -> std::convertible_to<bool>;

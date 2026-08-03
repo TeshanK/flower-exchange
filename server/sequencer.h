@@ -1,7 +1,8 @@
 #pragma once
 
+#include "systypes.h"
+#include <sep/protocol.h>
 #include <cstdint>
-#include <types.h>
 #include <chrono>
 
 class Sequencer
@@ -16,8 +17,12 @@ public:
         ).count();
 
         return Order {
-            .raw_order = raw_order,
             .sequence_number = seq,
+            .client_order_id = raw_order.client_order_id,
+            .instrument_id = raw_order.instrument_id,
+            .book_side = raw_order.book_side,
+            .quantity = raw_order.quantity,
+            .price = raw_order.price,
             .ingress_timestamp = now,
         };
     }
