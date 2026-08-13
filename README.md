@@ -1,6 +1,6 @@
 # Flower Exchange
 
-This repository contains a C++17 implementation of an exchange system with
+This repository contains a C++23 implementation of an exchange system with
 flowers as the instruments.
 The exchange application reads orders, applies validation, matches with price-time priority, and writes execution reports as CSV.
 
