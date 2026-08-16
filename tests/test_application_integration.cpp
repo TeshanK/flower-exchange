@@ -82,6 +82,21 @@ std::filesystem::path repo_path(const std::string &rel) {
   return std::filesystem::path(FLOWER_EXCHANGE_REPO_ROOT) / rel;
 }
 
+class TempCsvFile final {
+public:
+  explicit TempCsvFile(const std::string &filename)
+      : path_(std::filesystem::temp_directory_path() / filename) {}
+
+  ~TempCsvFile() { std::filesystem::remove(path_); }
+
+  [[nodiscard]] const std::filesystem::path &path() const noexcept {
+    return path_;
+  }
+
+private:
+  std::filesystem::path path_;
+};
+
 std::vector<std::string> split_csv_simple(const std::string &line) {
   std::vector<std::string> cols;
   std::string current;
@@ -159,18 +174,16 @@ TEST(ApplicationIntegrationTest, RepeatedProcessResetsOrderSequence) {
 }
 
 TEST(ApplicationIntegrationTest, MalformedNumericInputFailsProcess) {
-  std::filesystem::create_directories(repo_path("input_files"));
-  const std::filesystem::path bad_file =
-      repo_path("input_files/malformed_numeric_orders.csv");
+  const TempCsvFile bad_file("malformed_numeric_orders.csv");
 
   {
-    std::ofstream out(bad_file);
+    std::ofstream out(bad_file.path());
     out << "Client Order ID,Instrument,Side,Quantity,Price\n";
     out << "aa13,Rose,abc,100,55.00\n";
   }
 
   const int rc = run_with_commands({
-      "PROCESS " + bad_file.string(),
+      "PROCESS " + bad_file.path().string(),
       "QUIT",
   });
 
@@ -400,10 +413,9 @@ TEST(ApplicationIntegrationTest, AllExampleOutputsKeepStableCsvShape) {
 }
 
 TEST(ApplicationIntegrationTest, RejectedOrdersProduceExactlyOneRejectRowEach) {
-  const std::filesystem::path input_path =
-      repo_path("input_files/reject_reason_matrix_orders.csv");
+  const TempCsvFile input_file("reject_reason_matrix_orders.csv");
   {
-    std::ofstream out(input_path);
+    std::ofstream out(input_file.path());
     out << "Client Order ID,Instrument,Side,Quantity,Price\n";
     out << "r1,,1,100,55.00\n";
     out << "r2,Rose,3,100,55.00\n";
@@ -412,7 +424,7 @@ TEST(ApplicationIntegrationTest, RejectedOrdersProduceExactlyOneRejectRowEach) {
   }
 
   const int rc = run_with_commands({
-      "PROCESS " + input_path.string(),
+      "PROCESS " + input_file.path().string(),
       "QUIT",
   });
   ASSERT_EQ(rc, 0);
@@ -436,10 +448,9 @@ TEST(ApplicationIntegrationTest, RejectedOrdersProduceExactlyOneRejectRowEach) {
 }
 
 TEST(ApplicationIntegrationTest, OrderIdsProgressAfterRejection) {
-  const std::filesystem::path input_path =
-      repo_path("input_files/reject_then_valid_orders.csv");
+  const TempCsvFile input_file("reject_then_valid_orders.csv");
   {
-    std::ofstream out(input_path);
+    std::ofstream out(input_file.path());
     out << "Client Order ID,Instrument,Side,Quantity,Price\n";
     out << "x1,,1,100,55.00\n";
     out << "x2,Rose,2,100,55.00\n";
@@ -447,7 +458,7 @@ TEST(ApplicationIntegrationTest, OrderIdsProgressAfterRejection) {
   }
 
   const int rc = run_with_commands({
-      "PROCESS " + input_path.string(),
+      "PROCESS " + input_file.path().string(),
       "QUIT",
   });
   ASSERT_EQ(rc, 0);
@@ -475,17 +486,16 @@ TEST(ApplicationIntegrationTest, OrderIdsProgressAfterRejection) {
 
 TEST(ApplicationIntegrationTest,
      OversizedAndNonFinitePricesAreRejectedWithoutCrash) {
-  const std::filesystem::path input_path =
-      repo_path("input_files/price_overflow_orders.csv");
+  const TempCsvFile input_file("price_overflow_orders.csv");
   {
-    std::ofstream out(input_path);
+    std::ofstream out(input_file.path());
     out << "Client Order ID,Instrument,Side,Quantity,Price\n";
     out << "p1,Rose,1,100,1000000000000.00\n";
     out << "p2,Rose,1,100,1e309\n";
   }
 
   const int rc = run_with_commands({
-      "PROCESS " + input_path.string(),
+      "PROCESS " + input_file.path().string(),
       "QUIT",
   });
   ASSERT_EQ(rc, 0);
