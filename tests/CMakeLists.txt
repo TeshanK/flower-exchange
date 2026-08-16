@@ -7,6 +7,7 @@ add_executable(flower_exchange_tests
   test_csv_report_writer.cpp
   test_order_book.cpp
   test_matching_engine.cpp
+  test_order_processor.cpp
   test_application_integration.cpp
 )
 

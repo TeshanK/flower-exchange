@@ -6,6 +6,7 @@ add_library(flower_exchange_lib STATIC
   matching/bitmask_order_book.cpp
   matching/map_order_book.cpp
   matching/matching_engine.cpp
+  matching/order_processor.cpp
   io/csv_reader.cpp
   io/csv_order_producer.cpp
   io/csv_report_writer.cpp
