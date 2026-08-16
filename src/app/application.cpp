@@ -4,12 +4,21 @@
 #include <sstream>
 #include <string>
 
-Application::Application() = default;
+#include "app/file_processing_pipeline.h"
+
+Application::Application()
+    : owned_file_processor_(std::make_unique<FileProcessingPipeline>()),
+      input_(std::cin), file_processor_(*owned_file_processor_) {}
+
+Application::Application(std::istream &input, FileProcessor &file_processor)
+    : input_(input), file_processor_(file_processor) {}
+
+Application::~Application() = default;
 
 void Application::run() {
   std::string user_input;
   while (true) {
-    std::getline(std::cin, user_input);
+    std::getline(input_, user_input);
     if (user_input == "QUIT") {
       break;
     }

@@ -1,4 +1,5 @@
 add_executable(flower_exchange_tests
+  test_application.cpp
   test_mempool.cpp
   test_validator.cpp
   test_types.cpp
