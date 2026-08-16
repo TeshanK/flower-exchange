@@ -4,7 +4,7 @@
 
 #include "common/macros.h"
 #include "common/types.h"
-#include "app/application.h"
+#include "app/pipeline_types.h"
 
 std::size_t copy_text_len(char *dst, std::size_t dst_size, const char *src) {
   if (UNLIKELY(!dst || dst_size == 0)) {
@@ -35,19 +35,6 @@ void copy_text(char *dst, std::size_t dst_size, std::string_view src) {
     std::memcpy(dst, src.data(), copy_len);
   }
   dst[copy_len] = '\0';
-}
-
-template <typename TryOp>
-void spin_until_success(TryOp &&try_op, int fast_spins) {
-  int spin_count = 0;
-  while (!try_op()) {
-    if (spin_count++ < fast_spins) {
-      __builtin_ia32_pause();
-    } else {
-      std::this_thread::sleep_for(std::chrono::microseconds(1));
-      spin_count = 0;
-    }
-  }
 }
 
 const std::array<std::array<char, 5>, MAX_QUANTITY + 1> kQuantityText =

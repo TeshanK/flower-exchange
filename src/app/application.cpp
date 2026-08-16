@@ -14,6 +14,7 @@
 #include <print>
 
 #include "common/macros.h"
+#include "common/spsc_utils.h"
 #include "common/thread_utils.h"
 #include "common/validator.h"
 #include "io/csv_reader.h"

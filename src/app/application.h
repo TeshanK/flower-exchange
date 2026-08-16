@@ -2,49 +2,15 @@
 
 #include <array>
 #include <atomic>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <memory>
 #include <string>
 
+#include "app/pipeline_types.h"
 #include "common/mempool.h"
 #include "common/timestamp_cache.h"
 #include "common/types.h"
 #include "matching/bitmask_order_book.h"
 #include "matching/matching_engine.h"
-
-// Message payload produced by CSV reader thread and consumed by matcher
-// thread.
-struct InboundOrderMsg {
-  bool end_of_stream;
-  char coid[64];
-  char instrument[32];
-  int side;
-  int quantity;
-  double price;
-  uint64_t seq;
-};
-
-// Message payload produced by matcher thread and consumed by writer loop.
-// String lengths are precomputed to avoid repeated strlen in hot output path.
-struct OutboundReportMsg {
-  char oid[32];
-  uint8_t oid_len;
-  char coid[64];
-  uint8_t coid_len;
-  char instrument[32];
-  uint8_t instrument_len;
-  int side;
-  char exec_status[16];
-  uint8_t exec_status_len;
-  int quantity;
-  char price_text[24];
-  uint8_t price_text_len;
-  char reason[64];
-  uint8_t reason_len;
-  char timestamp[20];
-  uint8_t timestamp_len;
-  uint64_t seq;
-};
 
 class Application {
 public:
@@ -95,12 +61,6 @@ private:
   std::unique_ptr<MatchingEngine> matcher_;
   TimestampCache timestamp_cache_;
 
-  boost::lockfree::spsc_queue<
-      InboundOrderMsg,
-      boost::lockfree::capacity<RuntimeConfig::kInboundQueueCapacity>>
-      inbound_queue_;
-  boost::lockfree::spsc_queue<
-      OutboundReportMsg,
-      boost::lockfree::capacity<RuntimeConfig::kOutboundQueueCapacity>>
-      outbound_queue_;
+  InboundOrderQueue inbound_queue_;
+  OutboundReportQueue outbound_queue_;
 };
