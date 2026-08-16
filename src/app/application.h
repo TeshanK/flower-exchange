@@ -32,11 +32,6 @@ private:
 
   // Processes one input CSV into one output report file.
   void process_file(const std::string &input_path);
-  // Producer thread body: parse CSV and enqueue inbound messages.
-  void io_producer(const std::string &input_path,
-                   std::atomic<bool> &producer_done,
-                   std::atomic<uint64_t> &produced_orders,
-                   std::atomic<uint64_t> &producer_ns);
   // Consumer thread body: validate/match and enqueue report messages.
   void matching_consumer(std::atomic<bool> &producer_done,
                          std::atomic<bool> &matcher_done,

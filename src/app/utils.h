@@ -26,17 +26,6 @@ std::size_t copy_text_len(char *dst, std::size_t dst_size, const char *src) {
   return copy_len;
 }
 
-void copy_text(char *dst, std::size_t dst_size, std::string_view src) {
-  if (UNLIKELY(!dst || dst_size == 0)) {
-    return;
-  }
-  std::size_t copy_len = std::min(src.size(), dst_size - 1);
-  if (copy_len > 0) {
-    std::memcpy(dst, src.data(), copy_len);
-  }
-  dst[copy_len] = '\0';
-}
-
 void fill_outbound_common_fields(OutboundReportMsg &out,
                                  const ExecutionReport *report,
                                  const char *instrument_text, int side) {

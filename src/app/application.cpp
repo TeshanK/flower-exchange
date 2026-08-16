@@ -17,7 +17,7 @@
 #include "common/spsc_utils.h"
 #include "common/thread_utils.h"
 #include "common/validator.h"
-#include "io/csv_reader.h"
+#include "io/csv_order_producer.h"
 #include "io/csv_report_writer.h"
 #include "app/utils.h"
 
@@ -60,65 +60,6 @@ void Application::shutdown() {
   matcher_.reset();
   timestamp_cache_.stop();
   initialized_ = false;
-}
-
-void Application::io_producer(const std::string &input_path,
-                              std::atomic<bool> &producer_done,
-                              std::atomic<uint64_t> &produced_orders,
-                              std::atomic<uint64_t> &producer_ns) {
-  const auto producer_start = std::chrono::steady_clock::now();
-  uint64_t produced = 0;
-
-  std::ifstream file(input_path);
-  // Tune input buffer to 256 KB for faster bulk reads
-  std::array<char, 262144> file_buffer{};
-  file.rdbuf()->pubsetbuf(file_buffer.data(),
-                          static_cast<std::streamsize>(file_buffer.size()));
-
-  if (!file.is_open()) {
-    std::println(std::cerr, "Unable to open input file: {}", input_path);
-    InboundOrderMsg eos{};
-    eos.end_of_stream = true;
-    spin_until_success([&]() -> bool { return inbound_queue_.push(eos); }, 100);
-    producer_done.store(true);
-    return;
-  }
-
-  bool first_row = true;
-  uint64_t seq = 1;
-  for (const CSVRow &row : CSVRange(file)) {
-    if (first_row) {
-      first_row = false;
-      continue;
-    }
-    if (row.size() < 5) {
-      continue;
-    }
-
-    InboundOrderMsg msg{};
-    msg.end_of_stream = false;
-    copy_text(msg.coid, sizeof(msg.coid), row[0]);
-    copy_text(msg.instrument, sizeof(msg.instrument), row[1]);
-    msg.side = string_view_to_int(row[2]);
-    msg.quantity = string_view_to_int(row[3]);
-    msg.price = string_view_to_double(row[4]);
-    msg.seq = seq++;
-    ++produced;
-
-    spin_until_success([&]() -> bool { return inbound_queue_.push(msg); }, 100);
-  }
-
-  InboundOrderMsg eos{};
-  eos.end_of_stream = true;
-  spin_until_success([&]() -> bool { return inbound_queue_.push(eos); }, 100);
-
-  const auto producer_end = std::chrono::steady_clock::now();
-  producer_ns.store(static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(producer_end -
-                                                           producer_start)
-          .count()));
-  produced_orders.store(produced);
-  producer_done.store(true);
 }
 
 void Application::matching_consumer(std::atomic<bool> &producer_done,
@@ -238,33 +179,31 @@ void Application::process_file(const std::string &input_path) {
   }
   const std::string output_path = report_writer.output_path();
 
-  std::atomic<bool> producer_done{false};
-  std::atomic<bool> matcher_done{false};
-  std::atomic<uint64_t> produced_orders{0};
-  std::atomic<uint64_t> consumed_orders{0};
-  std::atomic<uint64_t> producer_ns{0};
-  std::atomic<uint64_t> matcher_ns{0};
+  PipelineState state;
+  CsvOrderProducer order_producer;
 
-  auto producer =
-      createAndStartThread(0, "io-producer", &Application::io_producer, this,
-                           input_path, std::ref(producer_done),
-                           std::ref(produced_orders), std::ref(producer_ns));
+  auto producer = createAndStartThread(
+      0, "io-producer", &CsvOrderProducer::produce, &order_producer, input_path,
+      std::ref(inbound_queue_), std::ref(state));
 
   auto matcher =
       createAndStartThread(1, "matcher", &Application::matching_consumer, this,
-                           std::ref(producer_done), std::ref(matcher_done),
-                           std::ref(consumed_orders), std::ref(matcher_ns));
+                           std::ref(state.producer_done),
+                           std::ref(state.matcher_done),
+                           std::ref(state.consumed_orders),
+                           std::ref(state.matcher_ns));
 
-  const uint64_t writer_ns = report_writer.drain(outbound_queue_, matcher_done);
+  const uint64_t writer_ns =
+      report_writer.drain(outbound_queue_, state.matcher_done);
 
   if (producer->joinable()) {
     producer->join();
-    producer_done.store(true);
+    state.producer_done.store(true);
   }
 
   if (matcher->joinable()) {
     matcher->join();
-    matcher_done.store(true);
+    state.matcher_done.store(true);
   }
 
   const auto write_end = std::chrono::steady_clock::now();
@@ -273,12 +212,12 @@ void Application::process_file(const std::string &input_path) {
                                                                 total_start)
           .count();
   const double producer_sec =
-      static_cast<double>(producer_ns.load()) / 1'000'000'000.0;
+      static_cast<double>(state.producer_ns.load()) / 1'000'000'000.0;
   const double matcher_sec =
-      static_cast<double>(matcher_ns.load()) / 1'000'000'000.0;
+      static_cast<double>(state.matcher_ns.load()) / 1'000'000'000.0;
   const double write_sec = static_cast<double>(writer_ns) / 1'000'000'000.0;
-  const uint64_t orders = produced_orders.load();
-  const uint64_t matched = consumed_orders.load();
+  const uint64_t orders = state.produced_orders.load();
+  const uint64_t matched = state.consumed_orders.load();
   const double orders_per_sec =
       (total_sec > 0.0) ? (static_cast<double>(orders) / total_sec) : 0.0;
 
