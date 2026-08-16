@@ -1,0 +1,22 @@
+# CMake build trees
+/build/
+/build-*/
+
+# Application output
+/output/
+
+# Locally generated load-test inputs
+/orders.csv
+/big_orders.csv
+
+# Compiler profiling data
+*.profraw
+*.profdata
+*.gcda
+*.gcno
+
+# Integration-test inputs generated at runtime
+/input_files/malformed_numeric_orders.csv
+/input_files/price_overflow_orders.csv
+/input_files/reject_reason_matrix_orders.csv
+/input_files/reject_then_valid_orders.csv
