@@ -5,6 +5,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -39,7 +40,7 @@ TEST(CsvReportWriterTest, DerivesPathAndWritesExactCsv) {
   EXPECT_EQ(writer.output_path(),
             (output_directory / "orders_reports.csv").string());
 
-  OutboundReportQueue queue;
+  auto queue = std::make_unique<OutboundReportQueue>();
   OutboundReportMsg message{};
   message.oid_len = copy_field(message.oid, "ord1");
   message.coid_len = copy_field(message.coid, "client1");
@@ -50,10 +51,10 @@ TEST(CsvReportWriterTest, DerivesPathAndWritesExactCsv) {
   message.price_text_len = copy_field(message.price_text, "55.00");
   message.reason_len = copy_field(message.reason, "");
   message.timestamp_len = copy_field(message.timestamp, "20260816-120000.000");
-  ASSERT_TRUE(queue.push(message));
+  ASSERT_TRUE(queue->push(message));
 
   std::atomic<bool> matcher_done{true};
-  const uint64_t elapsed_ns = writer.drain(queue, matcher_done);
+  const uint64_t elapsed_ns = writer.drain(*queue, matcher_done);
   EXPECT_GE(elapsed_ns, 0u);
 
   std::ifstream input(writer.output_path(), std::ios::binary);

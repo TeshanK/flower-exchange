@@ -30,29 +30,29 @@ void finish_input(InboundOrderQueue &queue, PipelineState &state) {
 
 TEST(OrderProcessorTest, ProducesRejectAndValidReportsWithProgressingIds) {
   OrderProcessor processor;
-  InboundOrderQueue inbound;
-  OutboundReportQueue outbound;
+  auto inbound = std::make_unique<InboundOrderQueue>();
+  auto outbound = std::make_unique<OutboundReportQueue>();
   PipelineState state;
 
-  ASSERT_TRUE(inbound.push(make_message("bad", "", 1, 100, 55.0, 1)));
+  ASSERT_TRUE(inbound->push(make_message("bad", "", 1, 100, 55.0, 1)));
   ASSERT_TRUE(
-      inbound.push(make_message("good", "Rose", 2, 100, 45.0, 2)));
-  finish_input(inbound, state);
+      inbound->push(make_message("good", "Rose", 2, 100, 45.0, 2)));
+  finish_input(*inbound, state);
 
-  processor.consume(inbound, outbound, state);
+  processor.consume(*inbound, *outbound, state);
 
   EXPECT_TRUE(state.matcher_done.load());
   EXPECT_EQ(state.consumed_orders.load(), 2u);
   OutboundReportMsg rejected{};
   OutboundReportMsg accepted{};
-  ASSERT_TRUE(outbound.pop(rejected));
-  ASSERT_TRUE(outbound.pop(accepted));
+  ASSERT_TRUE(outbound->pop(rejected));
+  ASSERT_TRUE(outbound->pop(accepted));
   EXPECT_STREQ(rejected.oid, "ord1");
   EXPECT_STREQ(rejected.exec_status, "Reject");
   EXPECT_STREQ(rejected.reason, "Invalid instrument");
   EXPECT_STREQ(accepted.oid, "ord2");
   EXPECT_STREQ(accepted.exec_status, "New");
-  EXPECT_TRUE(outbound.empty());
+  EXPECT_TRUE(outbound->empty());
 }
 
 TEST(OrderProcessorTest, ResetClearsBooksAndRestartsOrderIds) {

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -30,11 +31,11 @@ TEST(CsvOrderProducerTest, PublishesParsedRowsAndEndOfStream) {
     output << "c2,Tulip,2,200,12.50\n";
   }
 
-  InboundOrderQueue queue;
+  auto queue = std::make_unique<InboundOrderQueue>();
   PipelineState state;
   std::ostringstream diagnostics;
   CsvOrderProducer producer(diagnostics);
-  producer.produce(input_path.string(), queue, state);
+  producer.produce(input_path.string(), *queue, state);
 
   EXPECT_TRUE(state.producer_done.load());
   EXPECT_EQ(state.produced_orders.load(), 2u);
@@ -43,9 +44,9 @@ TEST(CsvOrderProducerTest, PublishesParsedRowsAndEndOfStream) {
   InboundOrderMsg first{};
   InboundOrderMsg second{};
   InboundOrderMsg end{};
-  ASSERT_TRUE(queue.pop(first));
-  ASSERT_TRUE(queue.pop(second));
-  ASSERT_TRUE(queue.pop(end));
+  ASSERT_TRUE(queue->pop(first));
+  ASSERT_TRUE(queue->pop(second));
+  ASSERT_TRUE(queue->pop(end));
   EXPECT_STREQ(first.coid, "c1");
   EXPECT_STREQ(first.instrument, "Rose");
   EXPECT_EQ(first.side, 1);
@@ -55,18 +56,18 @@ TEST(CsvOrderProducerTest, PublishesParsedRowsAndEndOfStream) {
   EXPECT_STREQ(second.coid, "c2");
   EXPECT_EQ(second.seq, 2u);
   EXPECT_TRUE(end.end_of_stream);
-  EXPECT_TRUE(queue.empty());
+  EXPECT_TRUE(queue->empty());
 
   std::filesystem::remove(input_path);
 }
 
 TEST(CsvOrderProducerTest, MissingInputPublishesOnlyEndOfStream) {
   const auto input_path = unique_input_path("flower_exchange_missing_");
-  InboundOrderQueue queue;
+  auto queue = std::make_unique<InboundOrderQueue>();
   PipelineState state;
   std::ostringstream diagnostics;
   CsvOrderProducer producer(diagnostics);
-  producer.produce(input_path.string(), queue, state);
+  producer.produce(input_path.string(), *queue, state);
 
   EXPECT_TRUE(state.producer_done.load());
   EXPECT_EQ(state.produced_orders.load(), 0u);
@@ -74,7 +75,7 @@ TEST(CsvOrderProducerTest, MissingInputPublishesOnlyEndOfStream) {
             std::string::npos);
 
   InboundOrderMsg end{};
-  ASSERT_TRUE(queue.pop(end));
+  ASSERT_TRUE(queue->pop(end));
   EXPECT_TRUE(end.end_of_stream);
-  EXPECT_TRUE(queue.empty());
+  EXPECT_TRUE(queue->empty());
 }
