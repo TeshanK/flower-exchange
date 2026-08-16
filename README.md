@@ -25,12 +25,28 @@ QUIT
 ## Project Structure
 
 - `src/common`: types, validator, memory pool, thread helpers
-- `src/io`: CSV reader/writer
-- `src/matching`: order book and matching engine
-- `src/app`: application orchestration
+- `src/io`: focused CSV order producer and execution-report writer components
+- `src/matching`: order processing, order books, and matching engine
+- `src/app`: command loop, file-processing pipeline, and performance reporting
 - `tests`: unit, integration, stress tests
 - `input_files`: input csv files
 - `output`: generated execution report csv files
+
+## Application Architecture
+
+`Application` is a thin command loop that depends on the `FileProcessor`
+interface. The production implementation, `FileProcessingPipeline`, coordinates
+three stages while keeping their responsibilities independent:
+
+- `CsvOrderProducer` parses input rows and publishes inbound order messages.
+- `OrderProcessor` validates orders, owns per-run matching state, and publishes
+  execution reports.
+- `CsvReportWriter` serializes execution reports using the existing buffered
+  CSV output path.
+
+The pipeline retains the SPSC queue topology and CPU-affinity behavior used by
+the low-latency implementation. `ConsoleProcessingReporter` owns performance
+output formatting so orchestration does not depend on console presentation.
 
 ## Accepted Order Format
 The exchange accepts orders in CSV format with the following columns:
