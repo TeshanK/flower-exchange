@@ -1,9 +1,6 @@
 #pragma once
 
-#include <string>
-
-#include "app/pipeline_types.h"
-#include "matching/order_processor.h"
+#include "app/file_processing_pipeline.h"
 
 class Application {
 public:
@@ -14,10 +11,5 @@ public:
   void run();
 
 private:
-  // Processes one input CSV into one output report file.
-  void process_file(const std::string &input_path);
-
-  OrderProcessor order_processor_;
-  InboundOrderQueue inbound_queue_;
-  OutboundReportQueue outbound_queue_;
+  FileProcessingPipeline file_processor_;
 };

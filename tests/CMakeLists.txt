@@ -9,6 +9,7 @@ add_executable(flower_exchange_tests
   test_matching_engine.cpp
   test_order_processor.cpp
   test_application_integration.cpp
+  test_processing_reporter.cpp
 )
 
 target_link_libraries(flower_exchange_tests
