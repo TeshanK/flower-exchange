@@ -7,6 +7,7 @@ add_library(flower_exchange_lib STATIC
   matching/map_order_book.cpp
   matching/matching_engine.cpp
   io/csv_reader.cpp
+  io/csv_report_writer.cpp
   common/types.cpp
   common/timestamp_cache.cpp
 )

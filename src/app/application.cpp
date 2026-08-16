@@ -18,6 +18,7 @@
 #include "common/thread_utils.h"
 #include "common/validator.h"
 #include "io/csv_reader.h"
+#include "io/csv_report_writer.h"
 #include "app/utils.h"
 
 Application::Application()
@@ -59,12 +60,6 @@ void Application::shutdown() {
   matcher_.reset();
   timestamp_cache_.stop();
   initialized_ = false;
-}
-
-std::string Application::derive_output_path(const std::string &input_path) {
-  std::filesystem::path in(input_path);
-  std::string stem = in.stem().string();
-  return (std::filesystem::path("output") / (stem + "_reports.csv")).string();
 }
 
 void Application::io_producer(const std::string &input_path,
@@ -237,18 +232,11 @@ void Application::process_file(const std::string &input_path) {
             BitmaskOrderBook(RuntimeConfig::kOrderBookTickCapacity));
   rebuild_matcher();
 
-  std::filesystem::create_directories("output");
-  const std::string output_path = derive_output_path(input_path);
-
-  std::ofstream out_file(output_path);
-  std::array<char, 1 << 20> out_file_buffer{};
-  out_file.rdbuf()->pubsetbuf(
-      out_file_buffer.data(),
-      static_cast<std::streamsize>(out_file_buffer.size()));
-  if (!out_file.is_open()) {
-    std::println(std::cerr, "Unable to open output file: {}", output_path);
+  CsvReportWriter report_writer;
+  if (!report_writer.prepare(input_path)) {
     return;
   }
+  const std::string output_path = report_writer.output_path();
 
   std::atomic<bool> producer_done{false};
   std::atomic<bool> matcher_done{false};
@@ -267,34 +255,7 @@ void Application::process_file(const std::string &input_path) {
                            std::ref(producer_done), std::ref(matcher_done),
                            std::ref(consumed_orders), std::ref(matcher_ns));
 
-  const auto write_start = std::chrono::steady_clock::now();
-  std::string write_batch;
-  write_batch.reserve(4 * 1024 * 1024);
-  write_batch.append("Order ID,Client Order Id,Instrument,Side,Exec "
-                     "Status,Quantity,Price,Reason,Timestamp\n");
-
-  int write_spin = 0;
-  while (!matcher_done.load() || !outbound_queue_.empty()) {
-    OutboundReportMsg msg{};
-    if (!outbound_queue_.pop(msg)) {
-      if (write_spin++ < 200) {
-        __builtin_ia32_pause();
-      } else {
-        std::this_thread::sleep_for(std::chrono::microseconds(1));
-        write_spin = 0;
-      }
-      continue;
-    }
-    write_spin = 0;
-
-    append_csv_row(write_batch, msg);
-
-    if (write_batch.size() >= 4 * 1024 * 1024) {
-      out_file.write(write_batch.data(),
-                     static_cast<std::streamsize>(write_batch.size()));
-      write_batch.clear();
-    }
-  }
+  const uint64_t writer_ns = report_writer.drain(outbound_queue_, matcher_done);
 
   if (producer->joinable()) {
     producer->join();
@@ -306,11 +267,6 @@ void Application::process_file(const std::string &input_path) {
     matcher_done.store(true);
   }
 
-  if (!write_batch.empty()) {
-    out_file.write(write_batch.data(),
-                   static_cast<std::streamsize>(write_batch.size()));
-  }
-
   const auto write_end = std::chrono::steady_clock::now();
   const double total_sec =
       std::chrono::duration_cast<std::chrono::duration<double>>(write_end -
@@ -320,10 +276,7 @@ void Application::process_file(const std::string &input_path) {
       static_cast<double>(producer_ns.load()) / 1'000'000'000.0;
   const double matcher_sec =
       static_cast<double>(matcher_ns.load()) / 1'000'000'000.0;
-  const double write_sec =
-      std::chrono::duration_cast<std::chrono::duration<double>>(write_end -
-                                                                write_start)
-          .count();
+  const double write_sec = static_cast<double>(writer_ns) / 1'000'000'000.0;
   const uint64_t orders = produced_orders.load();
   const uint64_t matched = consumed_orders.load();
   const double orders_per_sec =

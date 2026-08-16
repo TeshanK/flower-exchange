@@ -32,9 +32,6 @@ private:
 
   // Processes one input CSV into one output report file.
   void process_file(const std::string &input_path);
-  // Builds output path from input filename stem.
-  static std::string derive_output_path(const std::string &input_path);
-
   // Producer thread body: parse CSV and enqueue inbound messages.
   void io_producer(const std::string &input_path,
                    std::atomic<bool> &producer_done,

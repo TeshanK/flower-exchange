@@ -3,6 +3,7 @@ add_executable(flower_exchange_tests
   test_validator.cpp
   test_types.cpp
   test_csv_reader.cpp
+  test_csv_report_writer.cpp
   test_order_book.cpp
   test_matching_engine.cpp
   test_application_integration.cpp
