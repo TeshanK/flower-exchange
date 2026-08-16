@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <cstdint>
 
 #include "common/mempool.h"
@@ -11,20 +12,28 @@
 class MatchingEngine {
 public:
   // Binds engine to shared report pool and instrument-local books.
+  template <typename BookStrategy>
+    requires std::derived_from<BookStrategy, OrderBook>
   MatchingEngine(
       MemPool<Order> &order_pool, MemPool<ExecutionReport> &report_pool,
-      std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-          &buy_books,
-      std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-          &sell_books);
+      std::array<BookStrategy,
+                 static_cast<std::size_t>(InstrumentType::COUNT)> &buy_books,
+      std::array<BookStrategy,
+                 static_cast<std::size_t>(InstrumentType::COUNT)> &sell_books)
+      : order_pool_(order_pool), report_pool_(report_pool) {
+    for (std::size_t i = 0; i < buy_books_.size(); ++i) {
+      buy_books_[i] = &buy_books[i];
+      sell_books_[i] = &sell_books[i];
+    }
+  }
 
   template <typename EmitReport>
   // Matches an incoming order using price-time priority and emits reports.
   void process_order(Order *incoming, EmitReport &&emit_report,
                      const char *event_timestamp = nullptr) {
     const std::size_t idx = instrument_index(incoming->instrument);
-    OrderBook &opp_book =
-        incoming->side == Side::BUY ? sell_books_[idx] : buy_books_[idx];
+    OrderBook &opp_book = incoming->side == Side::BUY ? *sell_books_[idx]
+                                                       : *buy_books_[idx];
     bool matched_any = false;
 
     while (incoming->quantity > 0) {
@@ -77,8 +86,8 @@ public:
     }
 
     if (incoming->quantity > 0) {
-      OrderBook &own_book =
-          incoming->side == Side::BUY ? buy_books_[idx] : sell_books_[idx];
+      OrderBook &own_book = incoming->side == Side::BUY ? *buy_books_[idx]
+                                                        : *sell_books_[idx];
       own_book.add_order_known_valid(incoming->price, incoming);
       if (!matched_any) {
         const char *new_timestamp = event_timestamp;
@@ -98,8 +107,8 @@ private:
 
   MemPool<Order> &order_pool_;
   MemPool<ExecutionReport> &report_pool_;
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      &buy_books_;
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      &sell_books_;
+  std::array<OrderBook *, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books_{};
+  std::array<OrderBook *, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books_{};
 };

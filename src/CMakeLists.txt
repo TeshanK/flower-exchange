@@ -3,7 +3,8 @@ target_include_directories(common INTERFACE ${CMAKE_SOURCE_DIR}/src)
 
 add_library(flower_exchange_lib STATIC
   app/application.cpp
-  matching/order_book.cpp
+  matching/bitmask_order_book.cpp
+  matching/map_order_book.cpp
   matching/matching_engine.cpp
   io/csv_reader.cpp
   common/types.cpp

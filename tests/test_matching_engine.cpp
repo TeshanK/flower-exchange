@@ -1,19 +1,86 @@
 #include <gtest/gtest.h>
 
+#include <string>
 #include <vector>
 
 #include "common/mempool.h"
+#include "matching/bitmask_order_book.h"
+#include "matching/map_order_book.h"
 #include "matching/matching_engine.h"
+
+namespace {
+
+struct ReportSnapshot {
+  std::string oid;
+  std::string coid;
+  InstrumentType instrument;
+  Side side;
+  PriceTick price;
+  uint16_t quantity;
+  ExecStatus status;
+  std::string reason;
+  std::string timestamp;
+
+  bool operator==(const ReportSnapshot &) const = default;
+};
+
+template <typename BookStrategy>
+std::vector<ReportSnapshot> run_matching_scenario() {
+  MemPool<Order> order_pool(128);
+  MemPool<ExecutionReport> report_pool(128);
+  std::array<BookStrategy, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BookStrategy(1024), BookStrategy(1024), BookStrategy(1024),
+                BookStrategy(1024), BookStrategy(1024)};
+  std::array<BookStrategy, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BookStrategy(1024), BookStrategy(1024), BookStrategy(1024),
+                 BookStrategy(1024), BookStrategy(1024)};
+  MatchingEngine engine(order_pool, report_pool, buy_books, sell_books);
+  std::vector<ReportSnapshot> output;
+
+  const auto submit = [&](const char *oid, const char *coid,
+                          InstrumentType instrument, Side side,
+                          PriceTick price, uint16_t quantity) {
+    Order *order =
+        order_pool.allocate(oid, coid, instrument, side, price, quantity);
+    engine.process_order(
+        order,
+        [&](ExecutionReport *report) {
+          output.push_back({report->oid, report->coid, report->instrument,
+                            report->side, report->price, report->quantity,
+                            report->status, report->reason, report->timestamp});
+          report_pool.deallocate(report);
+        },
+        "20260816-120000.000");
+  };
+
+  // Same-price FIFO, multi-level sweeps, partial fills, both sides, and
+  // instrument isolation are all exercised in one deterministic stream.
+  submit("ord1", "c1", InstrumentType::ROSE, Side::SELL, 50, 100);
+  submit("ord2", "c2", InstrumentType::ROSE, Side::SELL, 50, 150);
+  submit("ord3", "c3", InstrumentType::ROSE, Side::SELL, 55, 100);
+  submit("ord4", "c4", InstrumentType::ROSE, Side::BUY, 50, 120);
+  submit("ord5", "c5", InstrumentType::ROSE, Side::BUY, 60, 200);
+  submit("ord6", "c6", InstrumentType::TULIP, Side::BUY, 70, 100);
+  submit("ord7", "c7", InstrumentType::TULIP, Side::BUY, 75, 50);
+  submit("ord8", "c8", InstrumentType::TULIP, Side::SELL, 60, 120);
+  submit("ord9", "c9", InstrumentType::ROSE, Side::BUY, 45, 50);
+  submit("ord10", "c10", InstrumentType::ROSE, Side::SELL, 40, 70);
+  submit("ord11", "c11", InstrumentType::ROSE, Side::BUY, 100, 200);
+
+  return output;
+}
+
+} // namespace
 
 TEST(MatchingEngineTest, FullFill) {
   MemPool<Order> order_pool(32);
   MemPool<ExecutionReport> rep_pool(32);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -32,12 +99,12 @@ TEST(MatchingEngineTest, FullFill) {
 TEST(MatchingEngineTest, PartialFillDoesNotEmitNew) {
   MemPool<Order> order_pool(32);
   MemPool<ExecutionReport> rep_pool(32);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -63,12 +130,12 @@ TEST(MatchingEngineTest, PartialFillDoesNotEmitNew) {
 TEST(MatchingEngineTest, MultiLevelSweep) {
   MemPool<Order> order_pool(64);
   MemPool<ExecutionReport> rep_pool(64);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -90,12 +157,12 @@ TEST(MatchingEngineTest, MultiLevelSweep) {
 TEST(MatchingEngineTest, NoCrossEmitsOnlyNew) {
   MemPool<Order> order_pool(32);
   MemPool<ExecutionReport> rep_pool(32);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
   Order *sell = order_pool.allocate("ord1", "c1", InstrumentType::ROSE,
@@ -119,12 +186,12 @@ TEST(MatchingEngineTest, NoCrossEmitsOnlyNew) {
 TEST(MatchingEngineTest, CrossInstrumentIsolation) {
   MemPool<Order> order_pool(32);
   MemPool<ExecutionReport> rep_pool(32);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -145,12 +212,12 @@ TEST(MatchingEngineTest, CrossInstrumentIsolation) {
 TEST(MatchingEngineTest, EqualPriceCrossesAndDoesNotRest) {
   MemPool<Order> order_pool(32);
   MemPool<ExecutionReport> rep_pool(32);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
   Order *sell = order_pool.allocate("ord1", "c1", InstrumentType::ROSE,
@@ -175,12 +242,12 @@ TEST(MatchingEngineTest, EqualPriceCrossesAndDoesNotRest) {
 TEST(MatchingEngineTest, SamePriceLevelFifoOrderIsStable) {
   MemPool<Order> order_pool(128);
   MemPool<ExecutionReport> rep_pool(128);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -213,12 +280,12 @@ TEST(MatchingEngineTest, SamePriceLevelFifoOrderIsStable) {
 TEST(MatchingEngineTest, PartiallyFilledRestingOrderKeepsTimePriority) {
   MemPool<Order> order_pool(128);
   MemPool<ExecutionReport> rep_pool(128);
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      buy_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                OrderBook(1024), OrderBook(1024)};
-  std::array<OrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
-      sell_books{OrderBook(1024), OrderBook(1024), OrderBook(1024),
-                 OrderBook(1024), OrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      buy_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
+  std::array<BitmaskOrderBook, static_cast<std::size_t>(InstrumentType::COUNT)>
+      sell_books{BitmaskOrderBook(1024), BitmaskOrderBook(1024), BitmaskOrderBook(1024),
+                 BitmaskOrderBook(1024), BitmaskOrderBook(1024)};
 
   MatchingEngine engine(order_pool, rep_pool, buy_books, sell_books);
 
@@ -252,4 +319,12 @@ TEST(MatchingEngineTest, PartiallyFilledRestingOrderKeepsTimePriority) {
   ASSERT_EQ(passive_fill_ids.size(), 2u);
   EXPECT_EQ(passive_fill_ids[0], "ord1");
   EXPECT_EQ(passive_fill_ids[1], "ord1");
+}
+
+TEST(MatchingEngineStrategyTest, MapAndBitmaskProduceIdenticalReports) {
+  const auto bitmask_output = run_matching_scenario<BitmaskOrderBook>();
+  const auto map_output = run_matching_scenario<MapOrderBook>();
+
+  ASSERT_FALSE(bitmask_output.empty());
+  EXPECT_EQ(map_output, bitmask_output);
 }
