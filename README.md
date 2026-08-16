@@ -73,14 +73,14 @@ The execution reports are generated in CSV format with the following columns:
   - CPU: Intel Core Intel® Core™ Ultra 7 Processor 155H
   - Cache: 24MB L3
   - RAM: 16GB DDR4
-  - Kernel: Linux 6.19.7-1-cachyos
-  - Compiler: GCC 15.2.1
+  - Kernel: 7.0.0-29-generic
+  - Compiler: GCC 15.2.0
   - Build Type: Release
 - Benchmarking Methodology:
   - Used `order_generator.py` to create large order files with varying sizes (10K, 100K, 1M, 10M orders)
   - Measured total processing time for each file and calculated throughput
 - Performance Metrics:
-  - Throughput: ~1.5M orders per second
+  - Throughput: ~1.35M orders per second
 
 ## References
 - Building Low Latency Applications with C++ by Sourav Ghosh
